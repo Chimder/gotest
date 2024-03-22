@@ -1,60 +1,45 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/joho/godotenv"
+	"github.com/chimas/GoProject/config"
+	"github.com/chimas/GoProject/db"
+	"github.com/chimas/GoProject/handler"
+	"github.com/go-redis/redis/v9"
+	_ "github.com/lib/pq"
 )
 
-type Message struct {
-	Text string `json:"text"`
-}
-
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Unable to connect to database:", err)
-		return
-	}
-
 	mux := http.NewServeMux()
+	// ctx := context.Background()
 
-	ctx := context.Background()
-	dbl := os.Getenv("DB_URL")
-
-	fmt.Println(dbl)
-	conn, err := pgx.Connect(ctx, dbl)
-	log.Printf("db conn", conn)
+	db, err := db.DBConnection()
 	if err != nil {
 		log.Fatal("Unable to connect to database:", err)
 		return
 	}
-	defer conn.Close(ctx)
+	defer db.Close()
 
-	// handler := &handler.Manga{}
+	opt, err := redis.ParseURL(config.LoadEnv().REDIS_URL)
+	if err != nil {
+		panic(err)
+	}
 
+	rdb := redis.NewClient(opt)
+
+	handler := handler.NewMangaHandler(db, rdb)
 	// mux.HandleFunc("GET /", handler.Allmanga)
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		query := `SELECT id FROM Anime `
-		rows, err := conn.Query(ctx, query)
-		if err != nil {
-
-			// return nil, fmt.Errorf("unable to query users: %w", err)
-		}
-		log.Println(rows)
-		defer rows.Close()
-
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(rows); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	})
+	mux.HandleFunc("GET /mangas", handler.Mangas)
+	mux.HandleFunc("GET /manga/{name}", handler.Manga)
+	mux.HandleFunc("GET /manga/{name}/{chapter}", handler.Chapter)
+	mux.HandleFunc("GET /popular", handler.Popular)
+	mux.HandleFunc("GET /search", handler.Search)
+	mux.HandleFunc("GET /rating", handler.Rating)
+	// mux.HandleFunc("GET /", handler.Allmanga)
+	// mux.HandleFunc("GET /", handler.Allmanga)
+	// mux.HandleFunc("GET /", handler.Allmanga)
 
 	log.Println("Listening...")
 	http.ListenAndServe(":5000", mux)

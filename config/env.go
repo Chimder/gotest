@@ -19,7 +19,7 @@ func LoadEnv() EnvVars {
 	}
 
 	redis_url := os.Getenv("REDIS_URL")
-	sql_url := os.Getenv("DB_URL")
+	db_url := os.Getenv("DB_URL")
 	// redis_db := os.Getenv("REDIS_DB")
 	// parsed_redis_db, err := strconv.Atoi(redis_db)
 	// if err != nil {
@@ -28,6 +28,6 @@ func LoadEnv() EnvVars {
 
 	return EnvVars{
 		REDIS_URL: redis_url,
-		DB_URL:    sql_url,
+		DB_URL:    db_url,
 	}
 }
