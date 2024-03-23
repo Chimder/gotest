@@ -1,4 +1,191 @@
+definitions:
+  handler.ChapterSwag:
+    properties:
+      animeName:
+        type: string
+      chapter:
+        type: integer
+      created:
+        type: string
+      genres:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+    type: object
+  handler.MangaSwag:
+    properties:
+      author:
+        type: string
+      averageRating:
+        type: number
+      chapters:
+        items:
+          $ref: '#/definitions/handler.ChapterSwag'
+        type: array
+      country:
+        type: string
+      describe:
+        type: string
+      genres:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      img:
+        type: string
+      imgHeader:
+        type: string
+      name:
+        type: string
+      popularity:
+        type: integer
+      published:
+        type: integer
+      ratingCount:
+        type: integer
+      status:
+        type: string
+    type: object
 info:
   contact: {}
-paths: {}
+paths:
+  /filter:
+    get:
+      consumes:
+      - application/json
+      description: Find Manga Chapter
+      operationId: Filter-anime
+      parameters:
+      - description: Name of the Manga
+        in: query
+        name: name
+        type: string
+      - collectionFormat: csv
+        description: Chapter of the Manga
+        in: query
+        items:
+          type: string
+        name: genres
+        type: array
+      - description: Name of the Manga
+        in: query
+        name: status
+        type: string
+      - description: Chapter of the Manga
+        in: query
+        name: country
+        type: string
+      - description: field of the Manga
+        in: query
+        name: orderField
+        type: string
+      - description: sort of the Manga
+        in: query
+        name: orderSort
+        type: string
+      - description: page
+        in: query
+        name: page
+        type: string
+      - description: perPage
+        in: query
+        name: perPage
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.MangaSwag'
+      summary: Get a chapter
+      tags:
+      - Manga
+  /manga/{name}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a manga by its name
+      operationId: get-manga-by-name
+      parameters:
+      - description: Name of the Manga
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.MangaSwag'
+      summary: Get a manga by name
+      tags:
+      - Manga
+  /manga/{name}/{chapter}:
+    get:
+      consumes:
+      - application/json
+      description: Find Manga Chapter
+      operationId: get-chapter
+      parameters:
+      - description: Name of the Manga
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Chapter of the Manga
+        in: path
+        name: chapter
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.ChapterSwag'
+      summary: Get a chapter
+      tags:
+      - Manga
+  /mangas:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all mangas
+      operationId: get-all-mangas
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.MangaSwag'
+            type: array
+      summary: Get all mangas
+      tags:
+      - Manga
+  /popular:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of popular mangas
+      operationId: get-popular-manga
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.MangaSwag'
+            type: array
+      summary: Get popular mangas
+      tags:
+      - Manga
 swagger: "2.0"

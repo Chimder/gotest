@@ -3,8 +3,11 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v9"
@@ -26,7 +29,7 @@ type Manga struct {
 	Img           string         `json:"img"`
 	ImgHeader     string         `json:"imgHeader" db:"imgHeader"`
 	Describe      string         `json:"describe"`
-	Genres        pq.StringArray `json:"genres"`
+	Genres        pq.StringArray `json:"genres" db:"genres"`
 	Author        string         `json:"author"`
 	Country       string         `json:"country"`
 	Published     int            `json:"published"`
@@ -40,12 +43,20 @@ type Manga struct {
 
 type Chapter struct {
 	Chapter   int            `json:"chapter"`
-	Img       pq.StringArray `json:"img"`
+	Img       pq.StringArray `json:"genres" db:"img"`
 	Name      string         `json:"name"`
 	AnimeName string         `json:"animeName" db:"animeName"`
 	CreatedAt time.Time      `json:"created" db:"createdAt"`
 }
 
+// @Summary Get all mangas
+// @Description Retrieve a list of all mangas
+// @Tags Manga
+// @ID get-all-mangas
+// @Accept  json
+// @Produce  json
+// @Success 200 {array} MangaSwag
+// @Router /mangas [get]
 func (m *MangaHandler) Mangas(w http.ResponseWriter, r *http.Request) {
 
 	query := `SELECT * FROM "Anime"`
@@ -60,6 +71,16 @@ func (m *MangaHandler) Mangas(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
+
+// @Summary Get a manga by name
+// @Description Retrieve a manga by its name
+// @Tags Manga
+// @ID get-manga-by-name
+// @Accept  json
+// @Produce  json
+// @Param  name path string true "Name of the Manga"
+// @Success 200 {object} MangaSwag
+// @Router /manga/{name} [get]
 func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	name := r.PathValue("name")
@@ -112,7 +133,16 @@ func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
+// @Summary Get a chapter
+// @Description Find Manga Chapter
+// @Tags Manga
+// @ID get-chapter
+// @Accept  json
+// @Produce  json
+// @Param  name path string true "Name of the Manga"
+// @Param  chapter path string false "Chapter of the Manga"
+// @Success 200 {object} ChapterSwag
+// @Router /manga/{name}/{chapter} [get]
 func (m *MangaHandler) Chapter(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	chapt := r.PathValue("chapter")
@@ -120,7 +150,7 @@ func (m *MangaHandler) Chapter(w http.ResponseWriter, r *http.Request) {
 	var chapter Chapter
 
 	query := `SELECT * FROM "Chapter" WHERE "animeName" =$1 AND chapter=$2`
-	
+
 	err := m.db.Get(&chapter, query, name, chapt)
 	if err != nil {
 		log.Fatal(err)
@@ -131,9 +161,18 @@ func (m *MangaHandler) Chapter(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
+
+// @Summary Get popular mangas
+// @Description Retrieve a list of popular mangas
+// @Tags Manga
+// @ID get-popular-manga
+// @Accept  json
+// @Produce  json
+// @Success 200 {array} MangaSwag
+// @Router /popular [get]
 func (m *MangaHandler) Popular(w http.ResponseWriter, r *http.Request) {
 
-	query := `SELECT * FROM "Anime"`
+	query := `SELECT * FROM "Anime" ORDER BY "ratingCount" DESC LIMIT 14 `
 	var animes []Manga
 	err := m.db.Select(&animes, query)
 	if err != nil {
@@ -159,17 +198,101 @@ func (m *MangaHandler) Search(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
-func (m *MangaHandler) Rating(w http.ResponseWriter, r *http.Request) {
 
-	query := `SELECT * FROM "Anime"`
-	var animes []Manga
-	err := m.db.Select(&animes, query)
+// @Summary Get a chapter
+// @Description Find Manga Chapter
+// @Tags Manga
+// @ID Filter-anime
+// @Accept  json
+// @Produce  json
+// @Param  name query string false "Name of the Manga"
+// @Param  genres query []string false "Chapter of the Manga"
+// @Param  status query string false "Name of the Manga"
+// @Param  country query string false "Chapter of the Manga"
+// @Param  orderField query string false "field of the Manga"
+// @Param  orderSort query string false "sort of the Manga"
+// @Param  page query string false "page"
+// @Param  perPage query string false "perPage"
+// @Success 200 {object} MangaSwag
+// @Router /filter [get]
+func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
+
+	params := r.URL.Query()
+
+	// Получение конкретных параметров
+	name := params.Get("name")
+	genres := strings.Split(params.Get("genres"), ",")
+	status := params.Get("status")
+	country := params.Get("country")
+	orderField := params.Get("orderField")
+	orderSort := params.Get("orderSort")
+
+	// Преобразование параметров page и perPage в int
+	page, err := strconv.Atoi(params.Get("page"))
+	if err != nil {
+		log.Println("not have page")
+	}
+	perPage, err := strconv.Atoi(params.Get("perPage"))
+	if err != nil {
+		log.Println("not have perPage")
+	}
+
+	var mangas []Manga
+	query := `SELECT * FROM "Anime" WHERE`
+	args := []interface{}{}
+
+	if name != "" {
+		name = "%" + name + "%"
+		query += ` "name" ILIKE $1 AND`
+		args = append(args, name)
+	}
+	if status != "" {
+		query += ` "status" = $2 AND`
+		args = append(args, status)
+	}
+	if country != "" {
+		query += ` "country" = $3 AND`
+		args = append(args, country)
+	}
+	if len(genres) > 0 {
+		for _, genre := range genres {
+			query += ` "genres" @> ARRAY[$4] AND`
+			args = append(args, genre)
+		}
+		query = strings.TrimSuffix(query, "AND")
+	}
+
+	query = strings.TrimSuffix(query, "AND")
+
+	if orderField != "" && orderSort != "" {
+		query += fmt.Sprintf(` ORDER BY "%s" %s`, orderField, orderSort)
+	}
+	if page > 0 && perPage > 0 {
+		query += fmt.Sprintf(` LIMIT %d OFFSET %d`, perPage, (page-1)*perPage)
+	}
+
+	err = m.db.Select(&mangas, query, args...)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(animes); err != nil {
+	if err := json.NewEncoder(w).Encode(mangas); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
+
+// func (m *MangaHandler) Rating(w http.ResponseWriter, r *http.Request) {
+
+// 	query := `SELECT * FROM "Anime"`
+// 	var animes []Manga
+// 	err := m.db.Select(&animes, query)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	w.Header().Set("Content-Type", "application/json")
+// 	if err := json.NewEncoder(w).Encode(animes); err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 	}
+// }
