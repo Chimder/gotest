@@ -211,15 +211,12 @@ func (m *MangaHandler) Search(w http.ResponseWriter, r *http.Request) {
 // @Param  country query string false "Chapter of the Manga"
 // @Param  orderField query string false "field of the Manga"
 // @Param  orderSort query string false "sort of the Manga"
-// @Param  page query string false "page"
+// @Param  page query string false "page not 0"
 // @Param  perPage query string false "perPage"
 // @Success 200 {object} MangaSwag
 // @Router /filter [get]
 func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
-
 	params := r.URL.Query()
-
-	// Получение конкретных параметров
 	name := params.Get("name")
 	genres := strings.Split(params.Get("genres"), ",")
 	status := params.Get("status")
@@ -227,7 +224,6 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 	orderField := params.Get("orderField")
 	orderSort := params.Get("orderSort")
 
-	// Преобразование параметров page и perPage в int
 	page, err := strconv.Atoi(params.Get("page"))
 	if err != nil {
 		log.Println("not have page")
@@ -238,28 +234,36 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var mangas []Manga
-	query := `SELECT * FROM "Anime" WHERE`
+	query := `SELECT * FROM "Anime"`
 	args := []interface{}{}
+	i := 1
+
+	if name != "" || status != "" || country != "" || (len(genres) > 0 && genres[0] != "") {
+		query += " WHERE"
+	}
 
 	if name != "" {
 		name = "%" + name + "%"
-		query += ` "name" ILIKE $1 AND`
+		query += fmt.Sprintf(` "name" ILIKE $%d AND`, i)
 		args = append(args, name)
+		i++
 	}
 	if status != "" {
-		query += ` "status" = $2 AND`
+		query += fmt.Sprintf(` "status" = $%d AND`, i)
 		args = append(args, status)
+		i++
 	}
 	if country != "" {
-		query += ` "country" = $3 AND`
+		query += fmt.Sprintf(` "country" = $%d AND`, i)
 		args = append(args, country)
+		i++
 	}
-	if len(genres) > 0 {
+	if len(genres) > 0 && genres[0] != "" {
 		for _, genre := range genres {
-			query += ` "genres" @> ARRAY[$4] AND`
+			query += fmt.Sprintf(` "genres" @> ARRAY[$%d] AND`, i)
 			args = append(args, genre)
+			i++
 		}
-		query = strings.TrimSuffix(query, "AND")
 	}
 
 	query = strings.TrimSuffix(query, "AND")
@@ -281,18 +285,3 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
-
-// func (m *MangaHandler) Rating(w http.ResponseWriter, r *http.Request) {
-
-// 	query := `SELECT * FROM "Anime"`
-// 	var animes []Manga
-// 	err := m.db.Select(&animes, query)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-
-// 	w.Header().Set("Content-Type", "application/json")
-// 	if err := json.NewEncoder(w).Encode(animes); err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 	}
-// }
