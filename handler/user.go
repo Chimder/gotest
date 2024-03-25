@@ -12,6 +12,7 @@ import (
 	"github.com/lib/pq"
 )
 
+
 type User struct {
 	Id        string         `json:"id"`
 	Email     string         `json:"email"`
