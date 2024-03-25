@@ -224,6 +224,7 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 	orderField := params.Get("orderField")
 	orderSort := params.Get("orderSort")
 
+
 	page, err := strconv.Atoi(params.Get("page"))
 	if err != nil {
 		log.Println("not have page")

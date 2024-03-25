@@ -8,6 +8,7 @@ import (
 	"github.com/chimas/GoProject/db"
 	_ "github.com/chimas/GoProject/docs"
 	"github.com/chimas/GoProject/handler"
+	"github.com/chimas/GoProject/middleware"
 	"github.com/go-redis/redis/v9"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
@@ -15,7 +16,7 @@ import (
 )
 
 func main() {
-	mux := http.NewServeMux()
+	router := http.NewServeMux()
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"http://localhost:4000"},
 	})
@@ -33,15 +34,22 @@ func main() {
 	}
 	rdb := redis.NewClient(opt)
 
-	handler := handler.NewMangaHandler(db, rdb)
-	mux.HandleFunc("GET /swagger/", httpSwagger.WrapHandler)
-	mux.HandleFunc("GET /mangas", handler.Mangas)
-	mux.HandleFunc("GET /manga/{name}", handler.Manga)
-	mux.HandleFunc("GET /manga/{name}/{chapter}", handler.Chapter)
-	mux.HandleFunc("GET /popular", handler.Popular)
-	mux.HandleFunc("GET /filter", handler.Filter)
-	// mux.HandleFunc("GET /search", handler.Search)
+	handlerM := handler.NewMangaHandler(db, rdb)
+	handlerU := handler.NewUserHandler(db, rdb)
+	router.HandleFunc("GET /swagger/", httpSwagger.WrapHandler)
+	router.HandleFunc("GET /mangas", handlerM.Mangas)
+	router.HandleFunc("GET /manga/{name}", handlerM.Manga)
+	router.HandleFunc("GET /manga/{name}/{chapter}", handlerM.Chapter)
+	router.HandleFunc("GET /popular", handlerM.Popular)
+	router.HandleFunc("GET /filter", handlerM.Filter)
+	router.HandleFunc("GET /user/{email}", handlerU.GetUser)
+	// router.HandleFunc("POST /user/addfavorite",handler)
+	// router.HandleFunc("DELETE /user",handler)
 
+	server := http.Server{
+		Addr:    ":4000",
+		Handler: middleware.Logging(c.Handler(router)),
+	}
 	log.Println("Listening...")
-	http.ListenAndServe(":4000", c.Handler(mux))
+	server.ListenAndServe()
 }
