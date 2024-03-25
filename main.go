@@ -43,7 +43,10 @@ func main() {
 	router.HandleFunc("GET /popular", handlerM.Popular)
 	router.HandleFunc("GET /filter", handlerM.Filter)
 	router.HandleFunc("GET /user/{email}", handlerU.GetUser)
-	// router.HandleFunc("POST /user/addfavorite",handler)
+	router.HandleFunc("POST /user/create", handlerU.CreateUserIfNotExists)
+	router.HandleFunc("POST /user/favorite/{name}/{email}", handlerU.ToggleFavorite)
+	router.HandleFunc("DELETE /user/delete/{email}", handlerU.DeleteUser)
+
 	// router.HandleFunc("DELETE /user",handler)
 
 	server := http.Server{

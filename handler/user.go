@@ -48,15 +48,41 @@ func (u *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (u *UserHandler) CreateUserIfNotExists(w http.ResponseWriter, r *http.Request) error {
+func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	email := r.PathValue("email")
+	result, err := u.db.Exec(`DELETE FROM "User" WHERE "email" = $1`, email)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	var user User
-	err := u.db.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if rowsAffected == 0 {
+		http.Error(w, "User not found", http.StatusNotFound)
+	} else {
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(map[string]string{"status": "User deleted"}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+}
+
+func (u *UserHandler) CreateUserIfNotExists(w http.ResponseWriter, r *http.Request) {
+	var newUser User
+	err := json.NewDecoder(r.Body).Decode(&newUser)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = u.db.Get(&newUser, `SELECT * FROM "User" WHERE "email" = $1`, newUser.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// Пользователь не найден, создаем нового
-			query := `INSERT INTO User (id, email, name, image, favorite, createdAt) VALUES (:id, :email, :name, :image, :favorite, :createdAt)`
+			query := `INSERT INTO "User" (id, email, name, image ) VALUES (:id, :email, :name, :image)`
 			_, err = u.db.NamedExec(query, newUser)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -65,6 +91,57 @@ func (u *UserHandler) CreateUserIfNotExists(w http.ResponseWriter, r *http.Reque
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
-	// Пользователь уже существует, пропускаем
-	return nil
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(newUser); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
+	var user User
+	name := r.PathValue("name")
+	email := r.PathValue("email")
+	err := u.db.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	isAnimeInFavorites := false
+	for _, favorite := range user.Favorite {
+		if favorite == name {
+			isAnimeInFavorites = true
+			break
+		}
+	}
+
+	log.Println("sisidisis", isAnimeInFavorites)
+
+	if !isAnimeInFavorites {
+
+		_, err = u.db.Exec(`UPDATE "Anime" SET "popularity" = popularity + 1 WHERE "name" = $1`, name)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		user.Favorite = append(user.Favorite, name)
+		_, err = u.db.NamedExec(`UPDATE "User" SET "favorite" = :favorite WHERE "email" = :email`, user)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	} else {
+		newFavorites := []string{}
+		for _, favorite := range user.Favorite {
+			if favorite != name {
+				newFavorites = append(newFavorites, favorite)
+			}
+		}
+		user.Favorite = newFavorites
+		_, err = u.db.NamedExec(`UPDATE "User" SET "favorite" = :favorite WHERE "email" = :email`, user)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
 }
