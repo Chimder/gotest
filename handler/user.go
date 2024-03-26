@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/go-redis/redis/v9"
@@ -13,6 +12,9 @@ import (
 	"github.com/lib/pq"
 )
 
+type SuccessResponse struct {
+	Success string `json:"success"`
+}
 type User struct {
 	Id        string         `json:"id"`
 	Email     string         `json:"email"`
@@ -42,16 +44,9 @@ type UserHandler struct {
 // @Router /user/{email} [get]
 func (u *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	email := r.PathValue("email")
-	aid, err := strconv.Atoi(email)
-	if err != nil {
-		log.Println("aid err")
-	}
-
-	log.Println("email2 is:", aid)
-	log.Println("email is:", email)
 	var user User
 
-	err = u.db.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
+	err := u.db.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -62,8 +57,90 @@ func (u *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type SuccessResponse struct {
-	Success string `json:"success"`
+type FavoriteResponse struct {
+	IsFavorite bool `json:"isFavorite"`
+}
+type MangasSwags struct {
+	Mangas []MangaSwag `json:"Mangas"`
+}
+
+// @Summary User favorite Mangas
+// @Description User Favorites
+// @Tags User
+// @ID get-user-list-manga
+// @Accept  json
+// @Produce  json
+// @Param  email query string true "email"
+// @Success 200 {array} MangaSwag
+// @Router /user/favorite/list [get]
+func (u *UserHandler) UserFavList(w http.ResponseWriter, r *http.Request) {
+	var user User
+	email := r.URL.Query().Get("email")
+
+	log.Println("emmm", email)
+	err := u.db.Get(&user, `SELECT "favorite" FROM "User" WHERE "email" = $1`, email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	if len(user.Favorite) == 0 {
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode([]Manga{}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+
+	query := `SELECT * FROM "Anime" WHERE "name" = ANY($1)`
+	var favoriteMangas []Manga
+	err = u.db.Select(&favoriteMangas, query, pq.Array(user.Favorite))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(favoriteMangas); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// @Summary User favorite Manga
+// @Description User Favorite
+// @Tags User
+// @ID get-user-favorite-manga
+// @Accept  json
+// @Produce  json
+// @Param  email query string true "email"
+// @Param  name query string true "name"
+// @Success 200 {object} FavoriteResponse
+// @Router /user/favorite/one [get]
+func (u *UserHandler) IsUserFavorite(w http.ResponseWriter, r *http.Request) {
+	var user User
+	name := r.URL.Query().Get("name")
+	email := r.URL.Query().Get("email")
+
+	err := u.db.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	isAnimeInFavorites := false
+	for _, favorite := range user.Favorite {
+		if favorite == name {
+			isAnimeInFavorites = true
+			break
+		}
+	}
+	log.Println("Is Fav:", isAnimeInFavorites)
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(FavoriteResponse{IsFavorite: isAnimeInFavorites}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // @Summary delete user by email
@@ -74,9 +151,9 @@ type SuccessResponse struct {
 // @Produce  json
 // @Param  email query string true "email"
 // @Success 200 {object} SuccessResponse
-// @Router /user/delete/{email} [delete]
+// @Router /user/delete [delete]
 func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	email := r.PathValue("email")
+	email := r.URL.Query().Get("email")
 	result, err := u.db.Exec(`DELETE FROM "User" WHERE "email" = $1`, email)
 	if err != nil {
 		log.Fatal(err)

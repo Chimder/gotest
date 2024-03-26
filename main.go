@@ -22,7 +22,7 @@ import (
 func main() {
 	router := http.NewServeMux()
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:4000"},
+		AllowedOrigins: []string{"http://localhost:4000", "http://localhost:3000"},
 	})
 
 	db, err := db.DBConnection()
@@ -45,14 +45,16 @@ func main() {
 	})
 	router.HandleFunc("GET /swagger/", httpSwagger.WrapHandler)
 	router.HandleFunc("GET /mangas", handlerM.Mangas)
-	router.HandleFunc("GET /manga/{name}", handlerM.Manga)
+	router.HandleFunc("GET /manga", handlerM.Manga)
 	router.HandleFunc("GET /manga/{name}/{chapter}", handlerM.Chapter)
 	router.HandleFunc("GET /popular", handlerM.Popular)
 	router.HandleFunc("GET /filter", handlerM.Filter)
 	router.HandleFunc("GET /user/{email}", handlerU.GetUser)
 	router.HandleFunc("POST /user/create", handlerU.CreateUserIfNotExists)
 	router.HandleFunc("POST /user/favorite/{name}/{email}", handlerU.ToggleFavorite)
-	router.HandleFunc("DELETE /user/delete/{email}", handlerU.DeleteUser)
+	router.HandleFunc("GET /user/favorite/one", handlerU.IsUserFavorite)
+	router.HandleFunc("GET /user/favorite/list", handlerU.UserFavList)
+	router.HandleFunc("DELETE /user/delete", handlerU.DeleteUser)
 
 	// router.HandleFunc("DELETE /user",handler)
 

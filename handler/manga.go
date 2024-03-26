@@ -43,7 +43,7 @@ type Manga struct {
 
 type Chapter struct {
 	Chapter   int            `json:"chapter"`
-	Img       pq.StringArray `json:"genres" db:"img"`
+	Img       pq.StringArray `json:"img" db:"img"`
 	Name      string         `json:"name"`
 	AnimeName string         `json:"animeName" db:"animeName"`
 	CreatedAt time.Time      `json:"created" db:"createdAt"`
@@ -78,12 +78,12 @@ func (m *MangaHandler) Mangas(w http.ResponseWriter, r *http.Request) {
 // @ID get-manga-by-name
 // @Accept  json
 // @Produce  json
-// @Param  name path string true "Name of the Manga"
+// @Param  name query string true "Name of the Manga"
 // @Success 200 {object} MangaSwag
-// @Router /manga/{name} [get]
+// @Router /manga [get]
 func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-	name := r.PathValue("name")
+	name := r.URL.Query().Get("name")
 
 	val, err := m.rdb.Get(ctx, name).Result()
 	if err == redis.Nil {
@@ -140,7 +140,7 @@ func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Param  name path string true "Name of the Manga"
-// @Param  chapter path string false "Chapter of the Manga"
+// @Param  chapter path string true "Chapter of the Manga"
 // @Success 200 {object} ChapterSwag
 // @Router /manga/{name}/{chapter} [get]
 func (m *MangaHandler) Chapter(w http.ResponseWriter, r *http.Request) {
@@ -211,9 +211,9 @@ func (m *MangaHandler) Search(w http.ResponseWriter, r *http.Request) {
 // @Param  country query string false "Chapter of the Manga"
 // @Param  orderField query string false "field of the Manga"
 // @Param  orderSort query string false "sort of the Manga"
-// @Param  page query string false "page not 0"
-// @Param  perPage query string false "perPage"
-// @Success 200 {object} MangaSwag
+// @Param  page query int false "page not 0"
+// @Param  perPage query int false "perPage"
+// @Success 200 {array} MangaSwag
 // @Router /filter [get]
 func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
@@ -223,7 +223,6 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 	country := params.Get("country")
 	orderField := params.Get("orderField")
 	orderSort := params.Get("orderSort")
-
 
 	page, err := strconv.Atoi(params.Get("page"))
 	if err != nil {

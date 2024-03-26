@@ -71,13 +71,13 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "page not 0",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "perPage",
                         "name": "perPage",
                         "in": "query"
@@ -87,13 +87,16 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.MangaSwag"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handler.MangaSwag"
+                            }
                         }
                     }
                 }
             }
         },
-        "/manga/{name}": {
+        "/manga": {
             "get": {
                 "description": "Retrieve a manga by its name",
                 "consumes": [
@@ -112,7 +115,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Name of the Manga",
                         "name": "name",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -152,7 +155,8 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Chapter of the Manga",
                         "name": "chapter",
-                        "in": "path"
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -254,7 +258,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/delete/{email}": {
+        "/user/delete": {
             "delete": {
                 "description": "Delete user",
                 "consumes": [
@@ -282,6 +286,82 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/handler.SuccessResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/favorite/list": {
+            "get": {
+                "description": "User Favorites",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "User favorite Mangas",
+                "operationId": "get-user-list-manga",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "email",
+                        "name": "email",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handler.MangaSwag"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/user/favorite/one": {
+            "get": {
+                "description": "User Favorite",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "User favorite Manga",
+                "operationId": "get-user-favorite-manga",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "email",
+                        "name": "email",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "name",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.FavoriteResponse"
                         }
                     }
                 }
@@ -382,6 +462,14 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "handler.FavoriteResponse": {
+            "type": "object",
+            "properties": {
+                "isFavorite": {
+                    "type": "boolean"
                 }
             }
         },
