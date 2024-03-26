@@ -15,6 +15,10 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+//		@title			Manka Api
+//		@version		1.0
+//		@description	Manga search
+//	 @BasePath	/
 func main() {
 	router := http.NewServeMux()
 	c := cors.New(cors.Options{
@@ -36,6 +40,9 @@ func main() {
 
 	handlerM := handler.NewMangaHandler(db, rdb)
 	handlerU := handler.NewUserHandler(db, rdb)
+	router.HandleFunc("GET /yaml", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "docs/swagger.yaml")
+	})
 	router.HandleFunc("GET /swagger/", httpSwagger.WrapHandler)
 	router.HandleFunc("GET /mangas", handlerM.Mangas)
 	router.HandleFunc("GET /manga/{name}", handlerM.Manga)

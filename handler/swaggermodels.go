@@ -26,3 +26,12 @@ type ChapterSwag struct {
 	AnimeName string    `json:"animeName" db:"animeName"`
 	CreatedAt time.Time `json:"created" db:"createdAt"`
 }
+
+type UserSwag struct {
+	Id        string    `json:"id"`
+	Email     string    `json:"email"`
+	Name      string    `json:"name"`
+	Image     string    `json:"image"`
+	Favorite  []string  `json:"favorite"`
+	CreatedAt time.Time `json:"createdAt" db:"createdAt"`
+}

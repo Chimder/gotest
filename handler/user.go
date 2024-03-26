@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-redis/redis/v9"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
-
 
 type User struct {
 	Id        string         `json:"id"`
@@ -31,14 +31,27 @@ type UserHandler struct {
 	rdb *redis.Client
 }
 
-// func (u *UserHandler) GetUser(email string) (*User, error) {
+// @Summary Get a user by email
+// @Description Retrieve a user its email
+// @Tags User
+// @ID get-user-by-email
+// @Accept  json
+// @Produce  json
+// @Param  email path string true "User Email"
+// @Success 200 {object} UserSwag
+// @Router /user/{email} [get]
 func (u *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
-
 	email := r.PathValue("email")
-	log.Println(email)
+	aid, err := strconv.Atoi(email)
+	if err != nil {
+		log.Println("aid err")
+	}
+
+	log.Println("email2 is:", aid)
+	log.Println("email is:", email)
 	var user User
 
-	err := u.db.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
+	err = u.db.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,6 +62,19 @@ func (u *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type SuccessResponse struct {
+	Success string `json:"success"`
+}
+
+// @Summary delete user by email
+// @Description Delete user
+// @Tags User
+// @ID delete-user
+// @Accept  json
+// @Produce  json
+// @Param  email query string true "email"
+// @Success 200 {object} SuccessResponse
+// @Router /user/delete/{email} [delete]
 func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	email := r.PathValue("email")
 	result, err := u.db.Exec(`DELETE FROM "User" WHERE "email" = $1`, email)
@@ -65,13 +91,25 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	if rowsAffected == 0 {
 		http.Error(w, "User not found", http.StatusNotFound)
 	} else {
+		// resp := SuccessResponse{
+		// 	Success: "User deleted",
+		// }
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(map[string]string{"status": "User deleted"}); err != nil {
+		if err := json.NewEncoder(w).Encode(SuccessResponse{Success: "User deleted"}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
 }
 
+// @Summary Create or cheack user
+// @Description Create
+// @Tags User
+// @ID create-or-cheack-user
+// @Accept  json
+// @Produce  json
+// @Param  body body string true "Auth Body"
+// @Success 200 {object} UserSwag
+// @Router /user/create [post]
 func (u *UserHandler) CreateUserIfNotExists(w http.ResponseWriter, r *http.Request) {
 	var newUser User
 	err := json.NewDecoder(r.Body).Decode(&newUser)
@@ -98,10 +136,21 @@ func (u *UserHandler) CreateUserIfNotExists(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// @Summary Toggle Favorite manga
+// @Description Toggle manga
+// @Tags User
+// @ID toggle-favorite-manga
+// @Accept  json
+// @Produce  json
+// @Param  name path string true "manga name"
+// @Param  email path string true "email"
+// @Success 200 {object} SuccessResponse
+// @Router /user/favorite/{name}/{email} [post]
 func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 	var user User
 	name := r.PathValue("name")
 	email := r.PathValue("email")
+
 	err := u.db.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -118,8 +167,6 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	log.Println("sisidisis", isAnimeInFavorites)
-
 	if !isAnimeInFavorites {
 
 		_, err = u.db.Exec(`UPDATE "Anime" SET "popularity" = popularity + 1 WHERE "name" = $1`, name)
@@ -132,6 +179,10 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(SuccessResponse{Success: "Manga added"}); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	} else {
 		newFavorites := []string{}
 		for _, favorite := range user.Favorite {
@@ -142,6 +193,10 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 		user.Favorite = newFavorites
 		_, err = u.db.NamedExec(`UPDATE "User" SET "favorite" = :favorite WHERE "email" = :email`, user)
 		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(SuccessResponse{Success: "Manga delete"}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
