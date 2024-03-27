@@ -11,6 +11,7 @@ import (
 	"github.com/chimas/GoProject/handler"
 	"github.com/chimas/GoProject/middleware"
 	"github.com/go-redis/redis/v9"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -21,6 +22,12 @@ import (
 //		@description	Manga search
 //	 @BasePath	/
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading .env file")
+		// log.Fatal("Error loading .env file")
+	}
+
 	router := http.NewServeMux()
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"http://localhost:4000", "http://localhost:3000"},
