@@ -168,9 +168,6 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	if rowsAffected == 0 {
 		http.Error(w, "User not found", http.StatusNotFound)
 	} else {
-		// resp := SuccessResponse{
-		// 	Success: "User deleted",
-		// }
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(SuccessResponse{Success: "User deleted"}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

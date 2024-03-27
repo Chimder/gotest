@@ -199,6 +199,17 @@ func (m *MangaHandler) Search(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type FilterParams struct {
+	Name       string   `schema:"name"`
+	Genres     []string `schema:"genres"`
+	Status     string   `schema:"status"`
+	Country    string   `schema:"country"`
+	OrderField string   `schema:"orderField"`
+	OrderSort  string   `schema:"orderSort"`
+	Page       int      `schema:"page"`
+	PerPage    int      `schema:"perPage"`
+}
+
 // @Summary Get a chapter
 // @Description Find Manga Chapter
 // @Tags Manga
@@ -218,7 +229,7 @@ func (m *MangaHandler) Search(w http.ResponseWriter, r *http.Request) {
 func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
 	name := params.Get("name")
-	genres := strings.Split(params.Get("genres"), ",")
+	genres := params["genres[]"]
 	status := params.Get("status")
 	country := params.Get("country")
 	orderField := params.Get("orderField")
@@ -267,7 +278,6 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query = strings.TrimSuffix(query, "AND")
-
 	if orderField != "" && orderSort != "" {
 		query += fmt.Sprintf(` ORDER BY "%s" %s`, orderField, orderSort)
 	}
@@ -275,6 +285,7 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 		query += fmt.Sprintf(` LIMIT %d OFFSET %d`, perPage, (page-1)*perPage)
 	}
 
+	log.Println("q", query)
 	err = m.db.Select(&mangas, query, args...)
 	if err != nil {
 		log.Fatal(err)
