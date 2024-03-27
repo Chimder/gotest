@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/chimas/GoProject/config"
 	"github.com/chimas/GoProject/db"
@@ -58,8 +59,12 @@ func main() {
 
 	// router.HandleFunc("DELETE /user",handler)
 
+	var PORT string
+	if PORT = os.Getenv("PORT"); PORT == "" {
+		PORT = "4000"
+	}
 	server := http.Server{
-		Addr:    ":4000",
+		Addr:    ":" + PORT,
 		Handler: middleware.Logging(c.Handler(router)),
 	}
 	log.Println("Listening...")
