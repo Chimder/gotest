@@ -451,7 +451,7 @@ const docTemplate = `{
                 "chapter": {
                     "type": "integer"
                 },
-                "created": {
+                "createdAt": {
                     "type": "string"
                 },
                 "genres": {

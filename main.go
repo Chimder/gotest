@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"log"
 	"net/http"
 	"os"
@@ -31,7 +30,7 @@ func main() {
 
 	router := http.NewServeMux()
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:4000", "http://localhost:3000"},
+		AllowedOrigins: []string{"http://localhost:4000", "http://localhost:3000", "https://golang-on-koyeb-mankago.koyeb.app/", "https://manka-next.vercel.app"},
 	})
 
 	db, err := db.DBConnection()
@@ -41,19 +40,14 @@ func main() {
 	}
 	defer db.Close()
 
-	// opt, err := redis.ParseURL(config.LoadEnv().REDIS_URL)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// rdb := redis.NewClient(opt)
 	opt, err := redis.ParseURL(config.LoadEnv().REDIS_URL)
 	if err != nil {
 		panic(err)
 	}
 
-	opt.TLSConfig = &tls.Config{
-		InsecureSkipVerify: true,
-	}
+	// opt.TLSConfig = &tls.Config{
+	// 	InsecureSkipVerify: true,
+	// }
 
 	rdb := redis.NewClient(opt)
 

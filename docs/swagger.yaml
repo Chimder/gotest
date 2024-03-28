@@ -6,7 +6,7 @@ definitions:
         type: string
       chapter:
         type: integer
-      created:
+      createdAt:
         type: string
       genres:
         items:
