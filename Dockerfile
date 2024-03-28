@@ -13,4 +13,8 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o gotest
 
 FROM scratch
 COPY --from=builder /app/gotest /gotest
+ENV REDIS_URL=$REDIS_URL
+ENV DB_URL=$DB_URL
+# ARG DB_URL
+# ARG REDIS_URL
 ENTRYPOINT ["/gotest"]

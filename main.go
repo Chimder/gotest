@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"log"
 	"net/http"
 	"os"
@@ -40,10 +41,20 @@ func main() {
 	}
 	defer db.Close()
 
+	// opt, err := redis.ParseURL(config.LoadEnv().REDIS_URL)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// rdb := redis.NewClient(opt)
 	opt, err := redis.ParseURL(config.LoadEnv().REDIS_URL)
 	if err != nil {
 		panic(err)
 	}
+
+	opt.TLSConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
 	rdb := redis.NewClient(opt)
 
 	handlerM := handler.NewMangaHandler(db, rdb)

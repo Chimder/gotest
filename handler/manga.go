@@ -93,24 +93,24 @@ func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 		var manga Manga
 		err := m.db.Get(&manga, query, name)
 		if err != nil {
-			log.Fatal(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		var chapters []Chapter
 		err = m.db.Select(&chapters, chaptersQuery, name)
 		if err != nil {
-			log.Fatal(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
 		manga.Chapters = chapters
 
 		mangaJSON, err := json.Marshal(manga)
 		if err != nil {
-			log.Fatal(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
 		err = m.rdb.Set(ctx, name, mangaJSON, time.Minute).Err()
 		if err != nil {
-			log.Fatal(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
