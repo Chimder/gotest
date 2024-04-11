@@ -25,7 +25,6 @@ func main() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Error loading .env file")
-		// log.Fatal("Error loading .env file")
 	}
 
 	router := http.NewServeMux()
@@ -44,11 +43,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	// opt.TLSConfig = &tls.Config{
-	// 	InsecureSkipVerify: true,
-	// }
-
 	rdb := redis.NewClient(opt)
 
 	handlerM := handler.NewMangaHandler(db, rdb)
@@ -68,8 +62,6 @@ func main() {
 	router.HandleFunc("GET /user/favorite/one", handlerU.IsUserFavorite)
 	router.HandleFunc("GET /user/favorite/list", handlerU.UserFavList)
 	router.HandleFunc("DELETE /user/delete", handlerU.DeleteUser)
-
-	// router.HandleFunc("DELETE /user",handler)
 
 	var PORT string
 	if PORT = os.Getenv("PORT"); PORT == "" {
