@@ -66,8 +66,9 @@ func main() {
 
 	var PORT string
 	if PORT = os.Getenv("PORT"); PORT == "" {
-		PORT = "8000"
+		PORT = "4000"
 	}
+
 	server := http.Server{
 		Addr:    ":" + PORT,
 		Handler: middleware.Logging(c.Handler(router)),
