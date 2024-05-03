@@ -11,7 +11,6 @@ import (
 	"github.com/chimas/GoProject/handler"
 	"github.com/chimas/GoProject/middleware"
 	"github.com/go-redis/redis/v9"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -23,10 +22,10 @@ import (
 //	 @BasePath	/
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file")
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Println("Error loading .env file")
+	// }
 
 	router := http.NewServeMux()
 	c := cors.New(cors.Options{
