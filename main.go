@@ -66,7 +66,7 @@ func main() {
 
 	var PORT string
 	if PORT = os.Getenv("PORT"); PORT == "" {
-		PORT = "4000"
+		PORT = "8000"
 	}
 	server := http.Server{
 		Addr:    ":" + PORT,
