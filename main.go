@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/chimas/GoProject/handler"
 	"github.com/chimas/GoProject/middleware"
 	"github.com/go-redis/redis/v9"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -22,14 +24,14 @@ import (
 //	 @BasePath	/
 
 func main() {
-	// err := godotenv.Load()
-	// if err != nil {
-	// 	log.Println("Error loading .env file")
-	// }
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading .env file")
+	}
 
 	router := http.NewServeMux()
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:4000", "http://localhost:3000", "https://golang-on-koyeb-mankago.koyeb.app/", "https://manka-next.vercel.app"},
+		AllowedOrigins: []string{"http://localhost:4000", "http://localhost:3000", "https://magnetic-gabbi-chimas.koyeb.app/", "https://manka-next.vercel.app"},
 	})
 
 	db, err := db.DBConnection()
@@ -43,6 +45,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	/////////////
+	opt.TLSConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	/////////////
+
 	rdb := redis.NewClient(opt)
 
 	handlerM := handler.NewMangaHandler(db, rdb)
