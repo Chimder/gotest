@@ -15,13 +15,13 @@ import (
 	"github.com/lib/pq"
 )
 
-func NewMangaHandler(db *sqlx.DB, rdb *redis.Client) *MangaHandler {
-	return &MangaHandler{db: db, rdb: rdb}
-}
-
 type MangaHandler struct {
 	db  *sqlx.DB
 	rdb *redis.Client
+}
+
+func NewMangaHandler(db *sqlx.DB, rdb *redis.Client) *MangaHandler {
+	return &MangaHandler{db: db, rdb: rdb}
 }
 
 type Manga struct {

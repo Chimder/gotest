@@ -21,6 +21,7 @@ import (
 //		@version		1.0
 //		@description	Manga search
 //	 @BasePath	/
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
