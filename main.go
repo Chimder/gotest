@@ -43,6 +43,7 @@ func main() {
 
 	opt, err := redis.ParseURL(config.LoadEnv().REDIS_URL)
 	if err != nil {
+		log.Println("REdisEnv", config.LoadEnv().REDIS_URL)
 		panic(err)
 	}
 	/////////////

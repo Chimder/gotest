@@ -1,4 +1,4 @@
-FROM golang:1.22.1-alpine AS builder
+FROM golang:1.22-alpine AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ FROM scratch
 COPY --from=builder /app/gotest /gotest
 ENV REDIS_URL=$REDIS_URL
 ENV DB_URL=$DB_URL
-ARG DB_URL
-ARG REDIS_URL
+# ARG DB_URL
+# ARG REDIS_URL
 EXPOSE 4000
 ENTRYPOINT ["/gotest"]

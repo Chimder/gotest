@@ -7,3 +7,7 @@
 .env.production.local
 .env*.local
 .env*
+
+/tmp
+.tmp
+tmp

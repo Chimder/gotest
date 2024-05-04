@@ -1,10 +1,7 @@
 package config
 
 import (
-	"log"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
 type EnvVars struct {
@@ -13,10 +10,10 @@ type EnvVars struct {
 }
 
 func LoadEnv() EnvVars {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file")
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Println("Error loading .env file")
+	// }
 
 	redis_url := os.Getenv("REDIS_URL")
 	db_url := os.Getenv("DB_URL")
