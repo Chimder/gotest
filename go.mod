@@ -1,6 +1,6 @@
 module github.com/chimas/GoProject
 
-go 1.22
+go 1.22.0
 
 require (
 	github.com/go-redis/redis/v9 v9.0.0-rc.2
