@@ -31,7 +31,8 @@ func main() {
 
 	router := http.NewServeMux()
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:4000", "http://localhost:3000", "https://magnetic-gabbi-chimas.koyeb.app/", "https://manka-next.vercel.app"},
+		// AllowedOrigins: []string{"http://localhost:4000", "http://localhost:3000", "https://magnetic-gabbi-chimas.koyeb.app/", "https://manka-next.vercel.app"},
+		AllowedOrigins: []string{"*"},
 	})
 
 	db, err := db.DBConnection()
@@ -58,6 +59,9 @@ func main() {
 	handlerU := handler.NewUserHandler(db, rdb)
 	router.HandleFunc("GET /yaml", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "docs/swagger.yaml")
+	})
+	router.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Hello World"))
 	})
 	router.HandleFunc("GET /swagger/", httpSwagger.WrapHandler)
 	router.HandleFunc("GET /mangas", handlerM.Mangas)
