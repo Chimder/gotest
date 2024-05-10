@@ -1,21 +1,23 @@
-FROM golang:1.22-alpine AS builder
+FROM koyeb/docker-compose
+COPY . /app
+# FROM golang:1.22-alpine AS builder
 
-WORKDIR /app
+# WORKDIR /app
 
-COPY go.mod .
-COPY go.sum .
+# COPY go.mod .
+# COPY go.sum .
 
-RUN go mod download
-RUN apk --no-cache add ca-certificates
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o gotest
+# RUN go mod download
+# RUN apk --no-cache add ca-certificates
+# COPY . .
+# RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o gotest
 
 
-FROM scratch
-COPY --from=builder /app/gotest /gotest
+# FROM scratch
+# COPY --from=builder /app/gotest /gotest
 # ENV REDIS_URL=$REDIS_URL
 # ENV DB_URL=$DB_URL
-# ARG DB_URL
-# ARG REDIS_URL
-EXPOSE 4000
-ENTRYPOINT ["/gotest"]
+# # ARG DB_URL
+# # ARG REDIS_URL
+# EXPOSE 4000
+# ENTRYPOINT ["/gotest"]
