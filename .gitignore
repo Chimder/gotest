@@ -8,6 +8,7 @@
 .env*.local
 .env*
 
+# Ignore temporary files and directories
 /tmp
-.tmp
+/.tmp/
 tmp
