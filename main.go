@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/chimas/GoProject/config"
 	"github.com/chimas/GoProject/db"
@@ -15,40 +14,37 @@ import (
 	"github.com/go-redis/redis/v9"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
-var (
-	opsProcessed = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: "go_metrics",
-		Subsystem: "prometheus",
-		Name:      "processed_record_total",
-		Help:      "process metrics count",
-	})
+// var (
+// 	opsProcessed = promauto.NewCounter(prometheus.CounterOpts{
+// 		Namespace: "go_metrics",
+// 		Subsystem: "prometheus",
+// 		Name:      "processed_record_total",
+// 		Help:      "process metrics count",
+// 	})
 
-	opsRequested = promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: "go_metrics",
-		Subsystem: "prometheus",
-		Name:      "processed_record_count",
-		Help:      "request record count",
-	})
-)
+// 	opsRequested = promauto.NewGauge(prometheus.GaugeOpts{
+// 		Namespace: "go_metrics",
+// 		Subsystem: "prometheus",
+// 		Name:      "processed_record_count",
+// 		Help:      "request record count",
+// 	})
+// )
 
-func recordMetrics() {
-	opsRequested.Inc()
-	defer opsRequested.Dec()
-	// loop
-	go func() {
-		for {
-			opsProcessed.Inc()
-			time.Sleep(2 * time.Second)
-		}
-	}()
-}
+// func recordMetrics() {
+// 	opsRequested.Inc()
+// 	defer opsRequested.Dec()
+// 	// loop
+// 	go func() {
+// 		for {
+// 			opsProcessed.Inc()
+// 			time.Sleep(2 * time.Second)
+// 		}
+// 	}()
+// }
 
 //		@title			Manka Api
 //		@version		1.0
@@ -57,7 +53,7 @@ func recordMetrics() {
 
 func main() {
 
-	recordMetrics()
+	// recordMetrics()
 
 	err := godotenv.Load()
 	if err != nil {
@@ -78,8 +74,8 @@ func main() {
 
 	opt, err := redis.ParseURL(config.LoadEnv().REDIS_URL)
 	if err != nil {
-		log.Fatal("REdisEnv", err)
-		return
+		log.Println("REdisEnv", config.LoadEnv().REDIS_URL)
+		panic(err)
 	}
 	/////////////
 	opt.TLSConfig = &tls.Config{
@@ -91,7 +87,7 @@ func main() {
 
 	handlerM := handler.NewMangaHandler(db, rdb)
 	handlerU := handler.NewUserHandler(db, rdb)
-	router.Handle("/metrics", promhttp.Handler())
+	// router.Handle("/metrics", promhttp.Handler())
 	router.HandleFunc("GET /yaml", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "docs/swagger.yaml")
 	})
