@@ -18,12 +18,42 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+// var (
+// 	opsProcessed = promauto.NewCounter(prometheus.CounterOpts{
+// 		Namespace: "go_metrics",
+// 		Subsystem: "prometheus",
+// 		Name:      "processed_record_total",
+// 		Help:      "process metrics count",
+// 	})
+
+// 	opsRequested = promauto.NewGauge(prometheus.GaugeOpts{
+// 		Namespace: "go_metrics",
+// 		Subsystem: "prometheus",
+// 		Name:      "processed_record_count",
+// 		Help:      "request record count",
+// 	})
+// )
+// func recordMetrics() {
+// 	opsRequested.Inc()
+// 	defer opsRequested.Dec()
+// 	// loop
+// 	go func() {
+// 		for {
+// 			opsProcessed.Inc()
+// 			time.Sleep(2 * time.Second)
+// 		}
+// 	}()
+// }
+
 //		@title			Manka Api
 //		@version		1.0
 //		@description	Manga search
 //	 @BasePath	/
 
 func main() {
+
+	// recordMetrics()
+
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Error loading .env file")
@@ -44,8 +74,8 @@ func main() {
 
 	opt, err := redis.ParseURL(config.LoadEnv().REDIS_URL)
 	if err != nil {
-		log.Println("REdisEnv", config.LoadEnv().REDIS_URL)
-		panic(err)
+		log.Fatal("REdisEnv", err)
+		return
 	}
 	/////////////
 	opt.TLSConfig = &tls.Config{
@@ -57,6 +87,7 @@ func main() {
 
 	handlerM := handler.NewMangaHandler(db, rdb)
 	handlerU := handler.NewUserHandler(db, rdb)
+	// router.Handle("/metrics", promhttp.Handler())
 	router.HandleFunc("GET /yaml", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "docs/swagger.yaml")
 	})
