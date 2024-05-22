@@ -91,6 +91,7 @@ func main() {
 	router.HandleFunc("GET /yaml", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "docs/swagger.yaml")
 	})
+
 	router.HandleFunc("GET /app", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello World"))
 	})
