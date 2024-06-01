@@ -1,0 +1,52 @@
+version: "3.8"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # restart: always
+    environment:
+      - REDIS_URL=$REDIS_URL
+      - DB_URL=$DB_URL
+    ports:
+      - "${PORT}:4000"
+#     networks:
+#       - metrics
+#     depends_on:
+#       - prometheus
+
+#   prometheus:
+#     image: prom/prometheus:latest
+#     container_name: prometheus
+#     networks:
+#       - metrics
+#     ports:
+#       - "9090:9090"
+#     volumes:
+#       - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+
+#   grafana:
+#     image: grafana/grafana:latest
+#     container_name: grafana
+#     networks:
+#       - metrics
+#     ports:
+#       - "3000:3000"
+#     depends_on:
+#       - app
+
+#   node_exporter:
+#     image: prom/node-exporter:latest
+#     container_name: node_exporter
+#     volumes:
+#       - "/:/host:ro,rslave"
+#     command:
+#       - "--path.rootfs=/host"
+#     networks:
+#       - metrics
+#     ports:
+#       - "9100:9100"
+
+# networks:
+#   metrics:
+#     driver: bridge
