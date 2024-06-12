@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,17 +10,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-redis/redis/v9"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
 
 type MangaHandler struct {
-	db *sqlx.DB
-	// rdb *redis.Client
+	db  *sqlx.DB
+	rdb *redis.Client
 }
 
-func NewMangaHandler(db *sqlx.DB) *MangaHandler {
-	return &MangaHandler{db: db}
+func NewMangaHandler(db *sqlx.DB, rdb *redis.Client) *MangaHandler {
+	return &MangaHandler{db: db, rdb: rdb}
 }
 
 type Manga struct {
@@ -80,72 +82,54 @@ func (m *MangaHandler) Mangas(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} MangaSwag
 // @Router /manga [get]
 func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
-	// ctx := context.Background()
+	ctx := context.Background()
 	name := r.URL.Query().Get("name")
 
-	// val, err := m.rdb.Get(ctx, name).Result()
-	// if err == redis.Nil {
+	val, err := m.rdb.Get(ctx, name).Result()
+	if err == redis.Nil {
 
-	// 	query := `SELECT * FROM "Anime" WHERE name=$1`
-	// 	chaptersQuery := `SELECT * FROM "Chapter" WHERE "animeName" =$1`
-	// 	var manga Manga
-	// 	err := m.db.Get(&manga, query, name)
-	// 	if err != nil {
-	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	}
-	// 	var chapters []Chapter
-	// 	err = m.db.Select(&chapters, chaptersQuery, name)
-	// 	if err != nil {
-	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	}
+		query := `SELECT * FROM "Anime" WHERE name=$1`
+		chaptersQuery := `SELECT * FROM "Chapter" WHERE "animeName" =$1`
+		var manga Manga
+		err := m.db.Get(&manga, query, name)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		var chapters []Chapter
+		err = m.db.Select(&chapters, chaptersQuery, name)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 
-	// 	manga.Chapters = chapters
+		manga.Chapters = chapters
 
-	// 	mangaJSON, err := json.Marshal(manga)
-	// 	if err != nil {
-	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	}
+		mangaJSON, err := json.Marshal(manga)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 
-	// 	err = m.rdb.Set(ctx, name, mangaJSON, time.Minute).Err()
-	// 	if err != nil {
-	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	}
+		err = m.rdb.Set(ctx, name, mangaJSON, time.Minute).Err()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 
-	// 	w.Header().Set("Content-Type", "application/json")
-	// 	if err := json.NewEncoder(w).Encode(manga); err != nil {
-	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	}
-	// } else if err != nil {
-	// 	log.Fatal(err)
-	// } else {
-	// 	manga := Manga{}
-	// 	err := json.Unmarshal([]byte(val), &manga)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(manga); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	} else if err != nil {
+		log.Fatal(err)
+	} else {
+		manga := Manga{}
+		err := json.Unmarshal([]byte(val), &manga)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	// 	w.Header().Set("Content-Type", "application/json")
-	// 	if err := json.NewEncoder(w).Encode(manga); err != nil {
-	// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	}
-	query := `SELECT * FROM "Anime" WHERE name=$1`
-	chaptersQuery := `SELECT * FROM "Chapter" WHERE "animeName" =$1`
-	var manga Manga
-	err := m.db.Get(&manga, query, name)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	var chapters []Chapter
-	err = m.db.Select(&chapters, chaptersQuery, name)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	manga.Chapters = chapters
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(manga); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(manga); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 }
 
