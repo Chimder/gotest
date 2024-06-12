@@ -1,17 +1,14 @@
 package main
 
 import (
-	"crypto/tls"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/chimas/GoProject/config"
 	"github.com/chimas/GoProject/db"
 	_ "github.com/chimas/GoProject/docs"
 	"github.com/chimas/GoProject/handler"
 	"github.com/chimas/GoProject/middleware"
-	"github.com/go-redis/redis/v9"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
@@ -72,21 +69,21 @@ func main() {
 	}
 	defer db.Close()
 
-	opt, err := redis.ParseURL(config.LoadEnv().REDIS_URL)
-	if err != nil {
-		log.Println("REdisEnv", config.LoadEnv().REDIS_URL)
-		panic(err)
-	}
-	/////////////
-	opt.TLSConfig = &tls.Config{
-		InsecureSkipVerify: true,
-	}
-	/////////////
+	// opt, err := redis.ParseURL(config.LoadEnv().REDIS_URL)
+	// if err != nil {
+	// 	log.Println("REdisEnv", config.LoadEnv().REDIS_URL)
+	// 	panic(err)
+	// }
+	// /////////////
+	// opt.TLSConfig = &tls.Config{
+	// 	InsecureSkipVerify: true,
+	// }
+	// /////////////
 
-	rdb := redis.NewClient(opt)
+	// rdb := redis.NewClient(opt)
 
-	handlerM := handler.NewMangaHandler(db, rdb)
-	handlerU := handler.NewUserHandler(db, rdb)
+	handlerM := handler.NewMangaHandler(db)
+	handlerU := handler.NewUserHandler(db)
 	// router.Handle("/metrics", promhttp.Handler())
 	router.HandleFunc("GET /yaml", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "docs/swagger.yaml")

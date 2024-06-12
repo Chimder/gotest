@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-redis/redis/v9"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
@@ -24,13 +23,13 @@ type User struct {
 	CreatedAt time.Time      `json:"createdAt" db:"createdAt"`
 }
 
-func NewUserHandler(db *sqlx.DB, rdb *redis.Client) *UserHandler {
-	return &UserHandler{db: db, rdb: rdb}
+func NewUserHandler(db *sqlx.DB) *UserHandler {
+	return &UserHandler{db: db}
 }
 
 type UserHandler struct {
-	db  *sqlx.DB
-	rdb *redis.Client
+	db *sqlx.DB
+	// rdb *redis.Client
 }
 
 // @Summary Get a user by email
