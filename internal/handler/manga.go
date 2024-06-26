@@ -10,18 +10,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis/v9"
+	"github.com/chimas/GoProject/utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 )
 
 type MangaHandler struct {
-	db  *sqlx.DB
-	rdb *redis.Client
+	pgdb *sqlx.DB
+	rdb  *redis.Client
 }
 
-func NewMangaHandler(db *sqlx.DB, rdb *redis.Client) *MangaHandler {
-	return &MangaHandler{db: db, rdb: rdb}
+func NewMangaHandler(pgdb *sqlx.DB, rdb *redis.Client) *MangaHandler {
+	return &MangaHandler{pgdb: pgdb, rdb: rdb}
 }
 
 type Manga struct {
@@ -56,19 +57,22 @@ type Chapter struct {
 // @Accept  json
 // @Produce  json
 // @Success 200 {array} MangaSwag
-// @Router /mangas [get]
+// @Router /manga/many [get]
 func (m *MangaHandler) Mangas(w http.ResponseWriter, r *http.Request) {
+	op := "handler Mangas"
 
 	query := `SELECT * FROM "Anime"`
 	var mangas []Manga
-	err := m.db.Select(&mangas, query)
+	err := m.pgdb.Select(&mangas, query)
 	if err != nil {
-		log.Fatal(err)
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(mangas); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := utils.WriteJSON(w, 200, mangas); err != nil {
+		utils.WriteError(w, 500, op, err)
+		return
+
 	}
 }
 
@@ -82,6 +86,7 @@ func (m *MangaHandler) Mangas(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} MangaSwag
 // @Router /manga [get]
 func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
+	op := "handler Manga"
 	ctx := context.Background()
 	name := r.URL.Query().Get("name")
 
@@ -91,31 +96,36 @@ func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 		query := `SELECT * FROM "Anime" WHERE name=$1`
 		chaptersQuery := `SELECT * FROM "Chapter" WHERE "animeName" =$1`
 		var manga Manga
-		err := m.db.Get(&manga, query, name)
+		err := m.pgdb.Get(&manga, query, name)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 		var chapters []Chapter
-		err = m.db.Select(&chapters, chaptersQuery, name)
+		err = m.pgdb.Select(&chapters, chaptersQuery, name)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 
 		manga.Chapters = chapters
 
 		mangaJSON, err := json.Marshal(manga)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 
 		err = m.rdb.Set(ctx, name, mangaJSON, time.Minute).Err()
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(manga); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 	} else if err != nil {
 		log.Fatal(err)
@@ -123,12 +133,13 @@ func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 		manga := Manga{}
 		err := json.Unmarshal([]byte(val), &manga)
 		if err != nil {
-			log.Fatal(err)
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(manga); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err := utils.WriteJSON(w, 200, manga); err != nil {
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 	}
 }
@@ -139,26 +150,27 @@ func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 // @ID get-chapter
 // @Accept  json
 // @Produce  json
-// @Param  name path string true "Name of the Manga"
-// @Param  chapter path string true "Chapter of the Manga"
+// @Param  name query string true "Name of the Manga"
+// @Param  chapter query int true "Chapter of the Manga"
 // @Success 200 {object} ChapterSwag
-// @Router /manga/{name}/{chapter} [get]
+// @Router /manga/chapter [get]
 func (m *MangaHandler) Chapter(w http.ResponseWriter, r *http.Request) {
-	name := r.PathValue("name")
-	chapt := r.PathValue("chapter")
+	op := "handler Chapter"
+	name := r.URL.Query().Get("name")
+	chap := r.URL.Query().Get("chapter")
 
 	var chapter Chapter
-
 	query := `SELECT * FROM "Chapter" WHERE "animeName" =$1 AND chapter=$2`
 
-	err := m.db.Get(&chapter, query, name, chapt)
+	err := m.pgdb.Get(&chapter, query, name, chap)
 	if err != nil {
-		log.Fatal(err)
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(chapter); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := utils.WriteJSON(w, 200, chapter); err != nil {
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 }
 
@@ -169,33 +181,40 @@ func (m *MangaHandler) Chapter(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Success 200 {array} MangaSwag
-// @Router /popular [get]
+// @Router /manga/popular [get]
 func (m *MangaHandler) Popular(w http.ResponseWriter, r *http.Request) {
+	op := "handler Popular"
 
 	query := `SELECT * FROM "Anime" ORDER BY "ratingCount" DESC LIMIT 14 `
 	var animes []Manga
-	err := m.db.Select(&animes, query)
+	err := m.pgdb.Select(&animes, query)
 	if err != nil {
-		log.Fatal(err)
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(animes); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := utils.WriteJSON(w, 200, animes); err != nil {
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 }
 func (m *MangaHandler) Search(w http.ResponseWriter, r *http.Request) {
-
+	op := "handler Search"
 	query := `SELECT * FROM "Anime"`
+
 	var animes []Manga
-	err := m.db.Select(&animes, query)
+
+	err := m.pgdb.Select(&animes, query)
 	if err != nil {
-		log.Fatal(err)
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(animes); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := utils.WriteJSON(w, 200, animes); err != nil {
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 }
 
@@ -225,8 +244,9 @@ type FilterParams struct {
 // @Param  page query int false "page not 0"
 // @Param  perPage query int false "perPage"
 // @Success 200 {array} MangaSwag
-// @Router /filter [get]
+// @Router /manga/filter [get]
 func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
+	op:="Handler Filter"
 	params := r.URL.Query()
 	name := params.Get("name")
 	genres := params["genres[]"]
@@ -286,13 +306,14 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("q", query)
-	err = m.db.Select(&mangas, query, args...)
+	err = m.pgdb.Select(&mangas, query, args...)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(mangas); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := utils.WriteJSON(w,200,mangas); err != nil {
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 }

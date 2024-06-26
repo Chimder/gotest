@@ -7,9 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-redis/redis/v9"
+	"github.com/chimas/GoProject/utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 )
 
 type SuccessResponse struct {
@@ -24,13 +25,13 @@ type User struct {
 	CreatedAt time.Time      `json:"createdAt" db:"createdAt"`
 }
 
-func NewUserHandler(db *sqlx.DB, rdb *redis.Client) *UserHandler {
-	return &UserHandler{db: db, rdb: rdb}
+func NewUserHandler(pgdb *sqlx.DB, rdb *redis.Client) *UserHandler {
+	return &UserHandler{pgdb: pgdb, rdb: rdb}
 }
 
 type UserHandler struct {
-	db  *sqlx.DB
-	rdb *redis.Client
+	pgdb *sqlx.DB
+	rdb  *redis.Client
 }
 
 // @Summary Get a user by email
@@ -43,17 +44,19 @@ type UserHandler struct {
 // @Success 200 {object} UserSwag
 // @Router /user/{email} [get]
 func (u *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	op := "handler GetUser"
 	email := r.PathValue("email")
 	var user User
 
-	err := u.db.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
+	err := u.pgdb.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
 	if err != nil {
-		log.Fatal(err)
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(user); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := utils.WriteJSON(w, 200, user); err != nil {
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 }
 
@@ -74,35 +77,39 @@ type MangasSwags struct {
 // @Success 200 {array} MangaSwag
 // @Router /user/favorite/list [get]
 func (u *UserHandler) UserFavList(w http.ResponseWriter, r *http.Request) {
+	op := "handler UserFavList"
 	var user User
 	email := r.URL.Query().Get("email")
 
-	log.Println("emmm", email)
-	err := u.db.Get(&user, `SELECT "favorite" FROM "User" WHERE "email" = $1`, email)
+	err := u.pgdb.Get(&user, `SELECT "favorite" FROM "User" WHERE "email" = $1`, email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+
+			utils.WriteError(w, 500, op, err)
+			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 
 	if len(user.Favorite) == 0 {
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode([]Manga{}); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err := utils.WriteJSON(w, 200, []Manga{}); err != nil {
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 	}
 
 	query := `SELECT * FROM "Anime" WHERE "name" = ANY($1)`
 	var favoriteMangas []Manga
-	err = u.db.Select(&favoriteMangas, query, pq.Array(user.Favorite))
+	err = u.pgdb.Select(&favoriteMangas, query, pq.Array(user.Favorite))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(favoriteMangas); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := utils.WriteJSON(w, 200, favoriteMangas); err != nil {
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 }
 
@@ -117,16 +124,19 @@ func (u *UserHandler) UserFavList(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} FavoriteResponse
 // @Router /user/favorite/one [get]
 func (u *UserHandler) IsUserFavorite(w http.ResponseWriter, r *http.Request) {
+	op := "handler IsUserFavorite"
 	var user User
 	name := r.URL.Query().Get("name")
 	email := r.URL.Query().Get("email")
 
-	err := u.db.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
+	err := u.pgdb.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.WriteError(w, 500, op, err)
+			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 
 	isAnimeInFavorites := false
@@ -138,8 +148,9 @@ func (u *UserHandler) IsUserFavorite(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println("Is Fav:", isAnimeInFavorites)
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(FavoriteResponse{IsFavorite: isAnimeInFavorites}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := utils.WriteJSON(w, 200, FavoriteResponse{IsFavorite: isAnimeInFavorites}); err != nil {
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 }
 
@@ -153,24 +164,32 @@ func (u *UserHandler) IsUserFavorite(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} SuccessResponse
 // @Router /user/delete [delete]
 func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	op := "handler DeleteUser"
 	email := r.URL.Query().Get("email")
-	result, err := u.db.Exec(`DELETE FROM "User" WHERE "email" = $1`, email)
+	result, err := u.pgdb.Exec(`DELETE FROM "User" WHERE "email" = $1`, email)
 	if err != nil {
+
+		utils.WriteError(w, 500, op, err)
+		return
 		log.Fatal(err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		log.Fatal(err)
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if rowsAffected == 0 {
-		http.Error(w, "User not found", http.StatusNotFound)
+		utils.WriteError(w, 404, "User not found", err)
+		return
 	} else {
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(SuccessResponse{Success: "User deleted"}); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err := utils.WriteJSON(w, 200, SuccessResponse{Success: "User deleted"}); err != nil {
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 	}
 }
@@ -185,28 +204,32 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} UserSwag
 // @Router /user/create [post]
 func (u *UserHandler) CreateUserIfNotExists(w http.ResponseWriter, r *http.Request) {
+	op := "handler CreateUserIfNotExists"
 	var newUser User
 	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.WriteError(w, 500, op, err)
 		return
 	}
 
-	err = u.db.Get(&newUser, `SELECT * FROM "User" WHERE "email" = $1`, newUser.Email)
+	err = u.pgdb.Get(&newUser, `SELECT * FROM "User" WHERE "email" = $1`, newUser.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			query := `INSERT INTO "User" (id, email, name, image ) VALUES (:id, :email, :name, :image)`
-			_, err = u.db.NamedExec(query, newUser)
+			_, err = u.pgdb.NamedExec(query, newUser)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				utils.WriteError(w, 500, op, err)
+				return
 			}
 		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(newUser); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := utils.WriteJSON(w, 200, newUser); err != nil {
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 }
 
@@ -221,16 +244,19 @@ func (u *UserHandler) CreateUserIfNotExists(w http.ResponseWriter, r *http.Reque
 // @Success 200 {object} SuccessResponse
 // @Router /user/favorite/{name}/{email} [post]
 func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
+	op := "handler ToggleFavorite"
 	var user User
 	name := r.PathValue("name")
 	email := r.PathValue("email")
 
-	err := u.db.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
+	err := u.pgdb.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.WriteError(w, 500, op, err)
+			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 
 	isAnimeInFavorites := false
@@ -243,19 +269,23 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 
 	if !isAnimeInFavorites {
 
-		_, err = u.db.Exec(`UPDATE "Anime" SET "popularity" = popularity + 1 WHERE "name" = $1`, name)
+		_, err = u.pgdb.Exec(`UPDATE "Anime" SET "popularity" = popularity + 1 WHERE "name" = $1`, name)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 
 		user.Favorite = append(user.Favorite, name)
-		_, err = u.db.NamedExec(`UPDATE "User" SET "favorite" = :favorite WHERE "email" = :email`, user)
+		_, err = u.pgdb.NamedExec(`UPDATE "User" SET "favorite" = :favorite WHERE "email" = :email`, user)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(SuccessResponse{Success: "Manga added"}); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 	} else {
 		newFavorites := []string{}
@@ -265,13 +295,15 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		user.Favorite = newFavorites
-		_, err = u.db.NamedExec(`UPDATE "User" SET "favorite" = :favorite WHERE "email" = :email`, user)
+		_, err = u.pgdb.NamedExec(`UPDATE "User" SET "favorite" = :favorite WHERE "email" = :email`, user)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(SuccessResponse{Success: "Manga delete"}); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err := utils.WriteJSON(w, 200, SuccessResponse{Success: "Manga delete"}); err != nil {
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 	}
 }

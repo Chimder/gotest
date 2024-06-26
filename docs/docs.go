@@ -15,7 +15,80 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/filter": {
+        "/manga": {
+            "get": {
+                "description": "Retrieve a manga by its name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Manga"
+                ],
+                "summary": "Get a manga by name",
+                "operationId": "get-manga-by-name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the Manga",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.MangaSwag"
+                        }
+                    }
+                }
+            }
+        },
+        "/manga/chapter": {
+            "get": {
+                "description": "Find Manga Chapter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Manga"
+                ],
+                "summary": "Get a chapter",
+                "operationId": "get-chapter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the Manga",
+                        "name": "name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Chapter of the Manga",
+                        "name": "chapter",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ChapterSwag"
+                        }
+                    }
+                }
+            }
+        },
+        "/manga/filter": {
             "get": {
                 "description": "Find Manga Chapter",
                 "consumes": [
@@ -96,80 +169,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/manga": {
-            "get": {
-                "description": "Retrieve a manga by its name",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Manga"
-                ],
-                "summary": "Get a manga by name",
-                "operationId": "get-manga-by-name",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Name of the Manga",
-                        "name": "name",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handler.MangaSwag"
-                        }
-                    }
-                }
-            }
-        },
-        "/manga/{name}/{chapter}": {
-            "get": {
-                "description": "Find Manga Chapter",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Manga"
-                ],
-                "summary": "Get a chapter",
-                "operationId": "get-chapter",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Name of the Manga",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Chapter of the Manga",
-                        "name": "chapter",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ChapterSwag"
-                        }
-                    }
-                }
-            }
-        },
-        "/mangas": {
+        "/manga/many": {
             "get": {
                 "description": "Retrieve a list of all mangas",
                 "consumes": [
@@ -196,7 +196,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/popular": {
+        "/manga/popular": {
             "get": {
                 "description": "Retrieve a list of popular mangas",
                 "consumes": [

@@ -83,7 +83,56 @@ info:
   title: Manka Api
   version: "1.0"
 paths:
-  /filter:
+  /manga:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a manga by its name
+      operationId: get-manga-by-name
+      parameters:
+      - description: Name of the Manga
+        in: query
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.MangaSwag'
+      summary: Get a manga by name
+      tags:
+      - Manga
+  /manga/chapter:
+    get:
+      consumes:
+      - application/json
+      description: Find Manga Chapter
+      operationId: get-chapter
+      parameters:
+      - description: Name of the Manga
+        in: query
+        name: name
+        required: true
+        type: string
+      - description: Chapter of the Manga
+        in: query
+        name: chapter
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.ChapterSwag'
+      summary: Get a chapter
+      tags:
+      - Manga
+  /manga/filter:
     get:
       consumes:
       - application/json
@@ -137,56 +186,7 @@ paths:
       summary: Get a chapter
       tags:
       - Manga
-  /manga:
-    get:
-      consumes:
-      - application/json
-      description: Retrieve a manga by its name
-      operationId: get-manga-by-name
-      parameters:
-      - description: Name of the Manga
-        in: query
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handler.MangaSwag'
-      summary: Get a manga by name
-      tags:
-      - Manga
-  /manga/{name}/{chapter}:
-    get:
-      consumes:
-      - application/json
-      description: Find Manga Chapter
-      operationId: get-chapter
-      parameters:
-      - description: Name of the Manga
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Chapter of the Manga
-        in: path
-        name: chapter
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handler.ChapterSwag'
-      summary: Get a chapter
-      tags:
-      - Manga
-  /mangas:
+  /manga/many:
     get:
       consumes:
       - application/json
@@ -204,7 +204,7 @@ paths:
       summary: Get all mangas
       tags:
       - Manga
-  /popular:
+  /manga/popular:
     get:
       consumes:
       - application/json
