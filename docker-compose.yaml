@@ -6,8 +6,8 @@ services:
       dockerfile: Dockerfile
     restart: always
     environment:
-      - REDIS_URL=$REDIS_URL
-      - DB_URL=$DB_URL
+      - REDIS_URL=${REDIS_URL}
+      - DB_URL=${DB_URL}
     ports:
       - "${PORT}:4000"
     networks:

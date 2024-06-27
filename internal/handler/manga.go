@@ -92,6 +92,7 @@ func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 
 	val, err := m.rdb.Get(ctx, name).Result()
 	if err == redis.Nil {
+		log.Println("reDEE", err)
 
 		query := `SELECT * FROM "Anime" WHERE name=$1`
 		chaptersQuery := `SELECT * FROM "Chapter" WHERE "animeName" =$1`
@@ -246,7 +247,7 @@ type FilterParams struct {
 // @Success 200 {array} MangaSwag
 // @Router /manga/filter [get]
 func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
-	op:="Handler Filter"
+	op := "Handler Filter"
 	params := r.URL.Query()
 	name := params.Get("name")
 	genres := params["genres[]"]
@@ -312,7 +313,7 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := utils.WriteJSON(w,200,mangas); err != nil {
+	if err := utils.WriteJSON(w, 200, mangas); err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
 	}

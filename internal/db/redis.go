@@ -17,9 +17,13 @@ func RedisCon() (*redis.Options, error) {
 		panic(err)
 	}
 
+	log.Println("redd", opt)
 	opt.TLSConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}
+
+	opt.PoolSize = 1000
+	opt.MinIdleConns = 10
 
 	return opt, nil
 }
