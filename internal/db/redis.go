@@ -13,11 +13,10 @@ func RedisCon() (*redis.Options, error) {
 
 	opt, err := redis.ParseURL(config.LoadEnv().REDIS_URL)
 	if err != nil {
-		log.Println("REdisEnv", config.LoadEnv().REDIS_URL)
+		log.Println("REdisEnv")
 		panic(err)
 	}
 
-	log.Println("redd", opt)
 	opt.TLSConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}

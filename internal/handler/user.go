@@ -168,15 +168,12 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	email := r.URL.Query().Get("email")
 	result, err := u.pgdb.Exec(`DELETE FROM "User" WHERE "email" = $1`, email)
 	if err != nil {
-
 		utils.WriteError(w, 500, op, err)
 		return
-		log.Fatal(err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		log.Fatal(err)
 		utils.WriteError(w, 500, op, err)
 		return
 	}
@@ -239,15 +236,16 @@ func (u *UserHandler) CreateUserIfNotExists(w http.ResponseWriter, r *http.Reque
 // @ID toggle-favorite-manga
 // @Accept  json
 // @Produce  json
-// @Param  name path string true "manga name"
-// @Param  email path string true "email"
+// @Param  name query string true "manga name"
+// @Param  email query string true "email"
 // @Success 200 {object} SuccessResponse
-// @Router /user/favorite/{name}/{email} [post]
+// @Router /user/toggle/favorite [post]
 func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 	op := "handler ToggleFavorite"
+	name := r.URL.Query().Get("name")
+	email := r.URL.Query().Get("email")
+
 	var user User
-	name := r.PathValue("name")
-	email := r.PathValue("email")
 
 	err := u.pgdb.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
 	if err != nil {
@@ -271,7 +269,6 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 
 		_, err = u.pgdb.Exec(`UPDATE "Anime" SET "popularity" = popularity + 1 WHERE "name" = $1`, name)
 		if err != nil {
-
 			utils.WriteError(w, 500, op, err)
 			return
 		}

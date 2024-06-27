@@ -289,33 +289,6 @@ paths:
       summary: delete user by email
       tags:
       - User
-  /user/favorite/{name}/{email}:
-    post:
-      consumes:
-      - application/json
-      description: Toggle manga
-      operationId: toggle-favorite-manga
-      parameters:
-      - description: manga name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: email
-        in: path
-        name: email
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/handler.SuccessResponse'
-      summary: Toggle Favorite manga
-      tags:
-      - User
   /user/favorite/list:
     get:
       consumes:
@@ -365,6 +338,33 @@ paths:
           schema:
             $ref: '#/definitions/handler.FavoriteResponse'
       summary: User favorite Manga
+      tags:
+      - User
+  /user/toggle/favorite:
+    post:
+      consumes:
+      - application/json
+      description: Toggle manga
+      operationId: toggle-favorite-manga
+      parameters:
+      - description: manga name
+        in: query
+        name: name
+        required: true
+        type: string
+      - description: email
+        in: query
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.SuccessResponse'
+      summary: Toggle Favorite manga
       tags:
       - User
 swagger: "2.0"

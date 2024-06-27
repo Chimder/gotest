@@ -367,7 +367,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/favorite/{name}/{email}": {
+        "/user/toggle/favorite": {
             "post": {
                 "description": "Toggle manga",
                 "consumes": [
@@ -386,14 +386,14 @@ const docTemplate = `{
                         "type": "string",
                         "description": "manga name",
                         "name": "name",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "email",
                         "name": "email",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     }
                 ],

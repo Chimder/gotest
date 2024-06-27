@@ -50,9 +50,9 @@ func NewRouter(pgdb *sqlx.DB, rdb *redis.Client) http.Handler {
 	r.Route("/user", func(r chi.Router) {
 		r.Get("/{email}", UserHandler.GetUser)
 		r.Post("/create", UserHandler.CreateUserIfNotExists)
-		r.Post("/favorite/{name}/{email}", UserHandler.ToggleFavorite)
 		r.Get("/favorite/one", UserHandler.IsUserFavorite)
 		r.Get("/favorite/list", UserHandler.UserFavList)
+		r.Post("/toggle/favorite", UserHandler.ToggleFavorite)
 		r.Delete("/delete", UserHandler.DeleteUser)
 	})
 
