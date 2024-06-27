@@ -1,21 +1,15 @@
 FROM golang:1.22-alpine AS builder
-
 WORKDIR /app
-
-COPY go.mod .
-COPY go.sum .
-RUN go mod download
-
-RUN apk --no-cache add ca-certificates
-
 COPY . .
-WORKDIR /app/cmd/api
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/gotest
+RUN go mod download
+RUN apk --no-cache add ca-certificates
+RUN go build -o ./example-golang ./cmd/api/main.go
 
 
-FROM scratch
-COPY --from=builder /app/gotest /gotest
+FROM alpine:latest AS runner
+WORKDIR /app
+COPY --from=builder /app/example-golang .
 ENV REDIS_URL=$REDIS_URL
 ENV DB_URL=$DB_URL
 EXPOSE 4000
-ENTRYPOINT ["/gotest"]
+ENTRYPOINT ["./example-golang"]
