@@ -20,9 +20,10 @@ func NewRouter(pgdb *sqlx.DB, rdb *redis.Client) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:4000", "http://localhost:3000", "http://localhost", "https://magnetic-gabbi-chimas.koyeb.app/", "https://manka-next.vercel.app", "https://magnetic-gabbi-chimas.koyeb.app"},
-		AllowCredentials: false,
-		MaxAge:           300,
+		// AllowedOrigins:   []string{"http://localhost:4000", "http://localhost:3000", "http://localhost", "https://magnetic-gabbi-chimas.koyeb.app/", "https://manka-next.vercel.app", "https://magnetic-gabbi-chimas.koyeb.app"},
+		AllowedOrigins: []string{"*"},
+		// AllowCredentials: false,
+		// MaxAge:           300,
 	}))
 	////////////////
 	r.Get("/yaml", func(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +36,7 @@ func NewRouter(pgdb *sqlx.DB, rdb *redis.Client) http.Handler {
 	MangaHandler := handler.NewMangaHandler(pgdb, rdb)
 	UserHandler := handler.NewUserHandler(pgdb, rdb)
 
-	r.Get("/app", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello World"))
 	})
 	r.Route("/manga", func(r chi.Router) {
