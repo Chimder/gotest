@@ -367,6 +367,30 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/session": {
+            "get": {
+                "description": "Get User Session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get User Session",
+                "operationId": "get-user-session",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.UserSwag"
+                        }
+                    }
+                }
+            }
+        },
         "/user/toggle/favorite": {
             "post": {
                 "description": "Toggle manga",

@@ -340,6 +340,22 @@ paths:
       summary: User favorite Manga
       tags:
       - User
+  /user/session:
+    get:
+      consumes:
+      - application/json
+      description: Get User Session
+      operationId: get-user-session
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.UserSwag'
+      summary: Get User Session
+      tags:
+      - User
   /user/toggle/favorite:
     post:
       consumes:

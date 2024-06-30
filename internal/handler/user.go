@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/chimas/GoProject/internal/auth"
+	"github.com/chimas/GoProject/internal/config"
 	"github.com/chimas/GoProject/utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -16,6 +18,7 @@ import (
 type SuccessResponse struct {
 	Success string `json:"success"`
 }
+
 type User struct {
 	Id        string         `json:"id"`
 	Email     string         `json:"email"`
@@ -166,6 +169,18 @@ func (u *UserHandler) IsUserFavorite(w http.ResponseWriter, r *http.Request) {
 func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	op := "handler DeleteUser"
 	email := r.URL.Query().Get("email")
+
+	user, ok := auth.GetUserFromContext(r.Context())
+	if !ok {
+		utils.WriteError(w, 401, op, nil)
+		return
+	}
+
+	if user.Email != email {
+		utils.WriteError(w, 403, "Email does not match", nil)
+		return
+	}
+
 	result, err := u.pgdb.Exec(`DELETE FROM "User" WHERE "email" = $1`, email)
 	if err != nil {
 		utils.WriteError(w, 500, op, err)
@@ -178,16 +193,14 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	if rowsAffected == 0 {
-		utils.WriteError(w, 404, "User not found", err)
+		utils.WriteError(w, 404, "User not found", nil)
 		return
-	} else {
-		w.WriteHeader(http.StatusOK)
-		if err := utils.WriteJSON(w, 200, SuccessResponse{Success: "User deleted"}); err != nil {
-			utils.WriteError(w, 500, op, err)
-			return
-		}
+	}
+
+	if err := utils.WriteJSON(w, 200, SuccessResponse{Success: "User deleted"}); err != nil {
+		utils.WriteError(w, 500, op, err)
+		return
 	}
 }
 
@@ -200,19 +213,21 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 // @Param  body body string true "Auth Body"
 // @Success 200 {object} UserSwag
 // @Router /user/create [post]
-func (u *UserHandler) CreateUserIfNotExists(w http.ResponseWriter, r *http.Request) {
-	op := "handler CreateUserIfNotExists"
+func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) {
+	op := "handler CreateOrCheckUser"
+	log.Println("start")
 	var newUser User
-	err := json.NewDecoder(r.Body).Decode(&newUser)
-	if err != nil {
+	if err := utils.ParseJSON(r, &newUser); err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
 	}
 
-	err = u.pgdb.Get(&newUser, `SELECT * FROM "User" WHERE "email" = $1`, newUser.Email)
+	log.Println("FirstUSERRRER", newUser)
+	err := u.pgdb.Get(&newUser, `SELECT * FROM "User" WHERE "email" = $1`, newUser.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			query := `INSERT INTO "User" (id, email, name, image ) VALUES (:id, :email, :name, :image)`
+			query := `INSERT INTO "User" (id, email, name, image) VALUES (:id, :email, :name, :image)`
+			log.Println("INSERT INTO")
 			_, err = u.pgdb.NamedExec(query, newUser)
 			if err != nil {
 				utils.WriteError(w, 500, op, err)
@@ -223,10 +238,52 @@ func (u *UserHandler) CreateUserIfNotExists(w http.ResponseWriter, r *http.Reque
 			return
 		}
 	}
-	w.Header().Set("Content-Type", "application/json")
-	if err := utils.WriteJSON(w, 200, newUser); err != nil {
+	log.Println("SEcondUSERRRER", newUser)
+
+	log.Println("encrypt")
+	encoded, err := auth.Encrypt(newUser)
+	if err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
+	}
+	log.Println("Cookie sets")
+	cookie := &http.Cookie{
+		Name:     "manka_google_user",
+		Value:    encoded,
+		Path:     "/",
+		Expires:  time.Now().Add(365 * 24 * time.Hour),
+		HttpOnly: false,
+		Secure:   config.LoadEnv().IS_PROD,
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	log.Println("seted Cookei", cookie)
+	http.SetCookie(w, cookie)
+
+	if err := utils.WriteJSON(w, 200, []byte("register Ok")); err != nil {
+		utils.WriteError(w, 500, op, err)
+		return
+	}
+}
+
+// @Summary Get User Session
+// @Description Get User Session
+// @Tags User
+// @ID get-user-session
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} UserSwag
+// @Router /user/session [get]
+func (u *UserHandler) GetSession(w http.ResponseWriter, r *http.Request) {
+	op := "handler GetSession"
+	user, ok := auth.GetUserFromContext(r.Context())
+	if !ok {
+		utils.WriteError(w, 401, op, nil)
+		return
+	}
+
+	if err := utils.WriteJSON(w, 200, user); err != nil {
+		utils.WriteError(w, 401, op, err)
 	}
 }
 

@@ -38,8 +38,10 @@ func NewServer() *Server {
 	if err != nil {
 		log.Fatal("Unable to connect to redis:", err)
 	}
-
 	rdb := redis.NewClient(opt)
+
+	/////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////
 
 	httpServer := &http.Server{
 		Addr:         ":" + PORT,
