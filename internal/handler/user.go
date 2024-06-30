@@ -87,8 +87,7 @@ func (u *UserHandler) UserFavList(w http.ResponseWriter, r *http.Request) {
 	err := u.pgdb.Get(&user, `SELECT "favorite" FROM "User" WHERE "email" = $1`, email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-
-			utils.WriteError(w, 500, op, err)
+			utils.WriteJSON(w, 200, []Manga{})
 			return
 		}
 		utils.WriteError(w, 500, op, err)
@@ -96,10 +95,8 @@ func (u *UserHandler) UserFavList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(user.Favorite) == 0 {
-		if err := utils.WriteJSON(w, 200, []Manga{}); err != nil {
-			utils.WriteError(w, 500, op, err)
-			return
-		}
+		utils.WriteJSON(w, 200, []Manga{})
+		return
 	}
 
 	query := `SELECT * FROM "Anime" WHERE "name" = ANY($1)`

@@ -2,14 +2,12 @@ package server
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/chimas/GoProject/internal/auth"
 	"github.com/chimas/GoProject/internal/handler"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
-	"github.com/go-chi/httprate"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -21,7 +19,7 @@ import (
 func NewRouter(pgdb *sqlx.DB, rdb *redis.Client) http.Handler {
 	////////////////
 	r := chi.NewRouter()
-	r.Use(httprate.LimitByIP(6, 10*time.Second))
+	// r.Use(httprate.LimitByIP(6, 10*time.Second))
 	r.Use(middleware.Logger)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:4000", "http://localhost:3000", "http://localhost", "https://magnetic-gabbi-chimas.koyeb.app/", "https://manka-next.vercel.app", "https://magnetic-gabbi-chimas.koyeb.app"},
