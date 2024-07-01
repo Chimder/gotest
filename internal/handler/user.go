@@ -249,7 +249,7 @@ func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) 
 		Path:     "/",
 		Expires:  time.Now().Add(365 * 24 * time.Hour),
 		HttpOnly: false,
-		Secure:   true,
+		Secure:   false,
 		SameSite: http.SameSiteNoneMode,
 	}
 
