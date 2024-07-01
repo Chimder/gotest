@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/chimas/GoProject/internal/auth"
-	"github.com/chimas/GoProject/internal/config"
 	"github.com/chimas/GoProject/utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -250,8 +249,8 @@ func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) 
 		Path:     "/",
 		Expires:  time.Now().Add(365 * 24 * time.Hour),
 		HttpOnly: false,
-		Secure:   config.LoadEnv().IS_PROD,
-		SameSite: http.SameSiteLaxMode,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
 	}
 
 	log.Println("seted Cookei", cookie)
