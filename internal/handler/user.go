@@ -250,7 +250,7 @@ func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) 
 		Expires:  time.Now().Add(365 * 24 * time.Hour),
 		HttpOnly: false,
 		Secure:   true,
-		SameSite: http.SameSiteDefaultMode,
+		SameSite: http.SameSiteNoneMode,
 	}
 
 	log.Println("seted Cookei", cookie)
