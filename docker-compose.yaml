@@ -10,10 +10,7 @@ services:
       - DB_URL=${DB_URL}
     ports:
       - "${PORT}:4000"
-    networks:
-      - metrics
-    depends_on:
-      - prometheus
+
 
 #   prometheus:
 #     image: prom/prometheus:latest
