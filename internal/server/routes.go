@@ -50,6 +50,7 @@ func NewRouter(pgdb *sqlx.DB, rdb *redis.Client) http.Handler {
 	})
 
 	r.Post("/user/create", UserHandler.CreateOrCheckUser)
+	r.Post("/user/cookie/delete", UserHandler.DeleteCookie)
 
 	r.Group(func(r chi.Router) {
 		// r.Use(httprate.Limit(3, time.Minute, httprate.WithKeyFuncs(

@@ -35,3 +35,6 @@ type UserSwag struct {
 	Favorite  []string  `json:"favorite"`
 	CreatedAt time.Time `json:"createdAt" db:"createdAt"`
 }
+
+type Empty struct {
+}

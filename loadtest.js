@@ -27,7 +27,7 @@ export const options = {
 //     check(res, { "status was 200": (r) => r.status === 200 });
 //   });
 
-//   sleep(1); // Ждем 1 секунду между итерациями
+//   sleep(1);
 // }
 
 export default function () {

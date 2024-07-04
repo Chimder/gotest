@@ -24,7 +24,7 @@ func Encrypt(payload interface{}) (string, error) {
 
 	tokenString, err := token.SignedString(secretKey)
 	if err != nil {
-		return "", fmt.Errorf("Ошибка при подписании токена: %v", err)
+		return "", fmt.Errorf("token encrypt: %v", err)
 	}
 
 	return tokenString, nil
@@ -36,7 +36,7 @@ func Decrypt(tokenString string, v interface{}) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("Ошибка при разборе токена: %v", err)
+		return fmt.Errorf("token decrypt: %v", err)
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
@@ -45,7 +45,7 @@ func Decrypt(tokenString string, v interface{}) error {
 		json.Unmarshal(bytes, &v)
 		return nil
 	} else {
-		return fmt.Errorf("Недействительный токен")
+		return fmt.Errorf("miss token")
 	}
 }
 

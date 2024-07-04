@@ -193,7 +193,17 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, 404, "User not found", nil)
 		return
 	}
+	cookie := &http.Cookie{
+		Name:     "manka_google_user",
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	}
 
+	http.SetCookie(w, cookie)
 	if err := utils.WriteJSON(w, 200, SuccessResponse{Success: "User deleted"}); err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
@@ -211,14 +221,12 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 // @Router /user/create [post]
 func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) {
 	op := "handler CreateOrCheckUser"
-	log.Println("start")
 	var newUser User
 	if err := utils.ParseJSON(r, &newUser); err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
 	}
 
-	log.Println("FirstUSERRRER", newUser)
 	err := u.pgdb.Get(&newUser, `SELECT * FROM "User" WHERE "email" = $1`, newUser.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -234,32 +242,60 @@ func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 	}
-	log.Println("SEcondUSERRRER", newUser)
 
-	log.Println("encrypt")
 	encoded, err := auth.Encrypt(newUser)
 	if err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
 	}
-	log.Println("Cookie sets")
 	cookie := &http.Cookie{
 		Name:     "manka_google_user",
 		Value:    encoded,
 		Path:     "/",
 		Expires:  time.Now().Add(365 * 24 * time.Hour),
-		HttpOnly: false,
+		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteNoneMode,
+		SameSite: http.SameSiteStrictMode,
 	}
 
-	log.Println("seted Cookei", cookie)
 	http.SetCookie(w, cookie)
 
 	if err := utils.WriteJSON(w, 200, []byte("register Ok")); err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
 	}
+}
+
+// @Summary DeleteUserCookie
+// @Description delete user cookie
+// @Tags User
+// @ID delete-user-cookie
+// @Accept  json
+// @Produce  json
+// @Success 200 {array} Empty
+// @Router /user/cookie/delete [get]
+func (u *UserHandler) DeleteCookie(w http.ResponseWriter, r *http.Request) {
+	op := "handle/DeleteCookie"
+	cookieName := "manka_google_user"
+
+	_, err := r.Cookie(cookieName)
+	if err != nil {
+		utils.WriteError(w, 404, op, err)
+		return
+	}
+
+	cookie := &http.Cookie{
+		Name:     cookieName,
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	}
+
+	http.SetCookie(w, cookie)
+	w.Write([]byte("cookie deleted"))
 }
 
 // @Summary Get User Session
