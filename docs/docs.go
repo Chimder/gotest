@@ -223,6 +223,33 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/cookie/delete": {
+            "get": {
+                "description": "delete user cookie",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "DeleteUserCookie",
+                "operationId": "delete-user-cookie",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handler.Empty"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/user/create": {
             "post": {
                 "description": "Create",
@@ -488,6 +515,9 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "handler.Empty": {
+            "type": "object"
         },
         "handler.FavoriteResponse": {
             "type": "object",

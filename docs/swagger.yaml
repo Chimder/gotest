@@ -15,6 +15,8 @@ definitions:
       name:
         type: string
     type: object
+  handler.Empty:
+    type: object
   handler.FavoriteResponse:
     properties:
       isFavorite:
@@ -242,6 +244,24 @@ paths:
           schema:
             $ref: '#/definitions/handler.UserSwag'
       summary: Get a user by email
+      tags:
+      - User
+  /user/cookie/delete:
+    get:
+      consumes:
+      - application/json
+      description: delete user cookie
+      operationId: delete-user-cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handler.Empty'
+            type: array
+      summary: DeleteUserCookie
       tags:
       - User
   /user/create:
