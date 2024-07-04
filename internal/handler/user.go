@@ -200,7 +200,7 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteNoneMode,
 	}
 
 	http.SetCookie(w, cookie)
@@ -255,7 +255,7 @@ func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) 
 		Expires:  time.Now().Add(365 * 24 * time.Hour),
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteNoneMode,
 	}
 
 	http.SetCookie(w, cookie)
@@ -291,7 +291,7 @@ func (u *UserHandler) DeleteCookie(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
 		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteNoneMode,
 	}
 
 	http.SetCookie(w, cookie)
