@@ -223,6 +223,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/user": {
+            "get": {
+                "description": "Retrieve a user its email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get a user by email",
+                "operationId": "get-user-by-email",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User Email",
+                        "name": "email",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handler.UserSwag"
+                        }
+                    }
+                }
+            }
+        },
         "/user/cookie/delete": {
             "get": {
                 "description": "delete user cookie",
@@ -453,39 +486,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/handler.SuccessResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/{email}": {
-            "get": {
-                "description": "Retrieve a user its email",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "User"
-                ],
-                "summary": "Get a user by email",
-                "operationId": "get-user-by-email",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User Email",
-                        "name": "email",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/handler.UserSwag"
                         }
                     }
                 }

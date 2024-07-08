@@ -40,6 +40,6 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
-	srv.Close()
+	srv.Close(ctx)
 	fmt.Println("Server gracefully stopped")
 }

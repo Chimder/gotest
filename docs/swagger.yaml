@@ -224,7 +224,7 @@ paths:
       summary: Get popular mangas
       tags:
       - Manga
-  /user/{email}:
+  /user:
     get:
       consumes:
       - application/json
@@ -232,7 +232,7 @@ paths:
       operationId: get-user-by-email
       parameters:
       - description: User Email
-        in: path
+        in: query
         name: email
         required: true
         type: string

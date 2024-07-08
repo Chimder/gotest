@@ -3,11 +3,11 @@ package handler
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/chimas/GoProject/internal/auth"
+	"github.com/chimas/GoProject/internal/queries"
 	"github.com/chimas/GoProject/utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -27,12 +27,13 @@ type User struct {
 	CreatedAt time.Time      `json:"createdAt" db:"createdAt"`
 }
 
-func NewUserHandler(pgdb *sqlx.DB, rdb *redis.Client) *UserHandler {
-	return &UserHandler{pgdb: pgdb, rdb: rdb}
+func NewUserHandler(sqlc *queries.Queries, sqlx *sqlx.DB, rdb *redis.Client) *UserHandler {
+	return &UserHandler{sqlc: sqlc, sqlx: sqlx, rdb: rdb}
 }
 
 type UserHandler struct {
-	pgdb *sqlx.DB
+	sqlc *queries.Queries
+	sqlx *sqlx.DB
 	rdb  *redis.Client
 }
 
@@ -42,15 +43,14 @@ type UserHandler struct {
 // @ID get-user-by-email
 // @Accept  json
 // @Produce  json
-// @Param  email path string true "User Email"
+// @Param  email query string true "User Email"
 // @Success 200 {object} UserSwag
-// @Router /user/{email} [get]
+// @Router /user [get]
 func (u *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	op := "handler GetUser"
-	email := r.PathValue("email")
-	var user User
+	email := r.URL.Query().Get("email")
 
-	err := u.pgdb.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
+	user, err := u.sqlc.GetUserByEmail(r.Context(), email)
 	if err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
@@ -80,10 +80,9 @@ type MangasSwags struct {
 // @Router /user/favorite/list [get]
 func (u *UserHandler) UserFavList(w http.ResponseWriter, r *http.Request) {
 	op := "handler UserFavList"
-	var user User
 	email := r.URL.Query().Get("email")
 
-	err := u.pgdb.Get(&user, `SELECT "favorite" FROM "User" WHERE "email" = $1`, email)
+	favorites, err := u.sqlc.GetUserFavoritesByEmail(r.Context(), email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			utils.WriteJSON(w, 200, []Manga{})
@@ -93,14 +92,12 @@ func (u *UserHandler) UserFavList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(user.Favorite) == 0 {
+	if len(favorites) == 0 {
 		utils.WriteJSON(w, 200, []Manga{})
 		return
 	}
 
-	query := `SELECT * FROM "Anime" WHERE "name" = ANY($1)`
-	var favoriteMangas []Manga
-	err = u.pgdb.Select(&favoriteMangas, query, pq.Array(user.Favorite))
+	favoriteMangas, err := u.sqlc.GetAnimeByNames(r.Context(), favorites)
 	if err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
@@ -124,11 +121,11 @@ func (u *UserHandler) UserFavList(w http.ResponseWriter, r *http.Request) {
 // @Router /user/favorite/one [get]
 func (u *UserHandler) IsUserFavorite(w http.ResponseWriter, r *http.Request) {
 	op := "handler IsUserFavorite"
-	var user User
 	name := r.URL.Query().Get("name")
 	email := r.URL.Query().Get("email")
 
-	err := u.pgdb.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
+	user, err := u.sqlc.GetUserByEmail(r.Context(), email)
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			utils.WriteError(w, 500, op, err)
@@ -145,8 +142,7 @@ func (u *UserHandler) IsUserFavorite(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
-	log.Println("Is Fav:", isAnimeInFavorites)
-	w.WriteHeader(http.StatusOK)
+
 	if err := utils.WriteJSON(w, 200, FavoriteResponse{IsFavorite: isAnimeInFavorites}); err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
@@ -177,22 +173,12 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := u.pgdb.Exec(`DELETE FROM "User" WHERE "email" = $1`, email)
+	err := u.sqlc.DeleteUserByEmail(r.Context(), email)
 	if err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		utils.WriteError(w, 500, op, err)
-		return
-	}
-
-	if rowsAffected == 0 {
-		utils.WriteError(w, 404, "User not found", nil)
-		return
-	}
 	cookie := &http.Cookie{
 		Name:     "manka_google_user",
 		Value:    "",
@@ -221,18 +207,22 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 // @Router /user/create [post]
 func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) {
 	op := "handler CreateOrCheckUser"
-	var newUser User
+	var newUser queries.User
+
 	if err := utils.ParseJSON(r, &newUser); err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
 	}
 
-	err := u.pgdb.Get(&newUser, `SELECT * FROM "User" WHERE "email" = $1`, newUser.Email)
+	user, err := u.sqlc.GetUserByEmail(r.Context(), newUser.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			query := `INSERT INTO "User" (id, email, name, image) VALUES (:id, :email, :name, :image)`
-			log.Println("INSERT INTO")
-			_, err = u.pgdb.NamedExec(query, newUser)
+			user, err = u.sqlc.InsertUser(r.Context(), queries.InsertUserParams{
+				// ID:    newUser.ID,
+				Email: newUser.Email,
+				Name:  newUser.Name,
+				Image: newUser.Image,
+			})
 			if err != nil {
 				utils.WriteError(w, 500, op, err)
 				return
@@ -243,11 +233,12 @@ func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	encoded, err := auth.Encrypt(newUser)
+	encoded, err := auth.Encrypt(user)
 	if err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
 	}
+
 	cookie := &http.Cookie{
 		Name:     "manka_google_user",
 		Value:    encoded,
@@ -257,10 +248,9 @@ func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) 
 		Secure:   true,
 		SameSite: http.SameSiteNoneMode,
 	}
-
 	http.SetCookie(w, cookie)
 
-	if err := utils.WriteJSON(w, 200, []byte("register Ok")); err != nil {
+	if err := utils.WriteJSON(w, 200, user); err != nil {
 		utils.WriteError(w, 500, op, err)
 		return
 	}
@@ -334,14 +324,8 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
 	email := r.URL.Query().Get("email")
 
-	var user User
-
-	err := u.pgdb.Get(&user, `SELECT * FROM "User" WHERE "email" = $1`, email)
+	user, err := u.sqlc.GetUserByEmail(r.Context(), email)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			utils.WriteError(w, 500, op, err)
-			return
-		}
 		utils.WriteError(w, 500, op, err)
 		return
 	}
@@ -355,20 +339,22 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !isAnimeInFavorites {
-
-		_, err = u.pgdb.Exec(`UPDATE "Anime" SET "popularity" = popularity + 1 WHERE "name" = $1`, name)
+		err = u.sqlc.UpdateAnimePopularity(r.Context(), name)
 		if err != nil {
 			utils.WriteError(w, 500, op, err)
 			return
 		}
 
 		user.Favorite = append(user.Favorite, name)
-		_, err = u.pgdb.NamedExec(`UPDATE "User" SET "favorite" = :favorite WHERE "email" = :email`, user)
+		err = u.sqlc.UpdateUserFavorites(r.Context(), queries.UpdateUserFavoritesParams{
+			Favorite: user.Favorite,
+			Email:    email,
+		})
 		if err != nil {
 			utils.WriteError(w, 500, op, err)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
+
 		if err := json.NewEncoder(w).Encode(SuccessResponse{Success: "Manga added"}); err != nil {
 			utils.WriteError(w, 500, op, err)
 			return
@@ -381,13 +367,16 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		user.Favorite = newFavorites
-		_, err = u.pgdb.NamedExec(`UPDATE "User" SET "favorite" = :favorite WHERE "email" = :email`, user)
+		err = u.sqlc.UpdateUserFavorites(r.Context(), queries.UpdateUserFavoritesParams{
+			Favorite: newFavorites,
+			Email:    email,
+		})
 		if err != nil {
 			utils.WriteError(w, 500, op, err)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
-		if err := utils.WriteJSON(w, 200, SuccessResponse{Success: "Manga delete"}); err != nil {
+
+		if err := utils.WriteJSON(w, 200, SuccessResponse{Success: "Manga deleted"}); err != nil {
 			utils.WriteError(w, 500, op, err)
 			return
 		}

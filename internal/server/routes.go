@@ -5,6 +5,7 @@ import (
 
 	"github.com/chimas/GoProject/internal/auth"
 	"github.com/chimas/GoProject/internal/handler"
+	"github.com/chimas/GoProject/internal/queries"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
@@ -16,8 +17,8 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
-func NewRouter(pgdb *sqlx.DB, rdb *redis.Client) http.Handler {
-	////////////////
+func NewRouter(sqlc *queries.Queries, sqlx *sqlx.DB, rdb *redis.Client) http.Handler {
+
 	r := chi.NewRouter()
 	// r.Use(httprate.LimitByIP(6, 10*time.Second))
 	r.Use(middleware.Logger)
@@ -27,16 +28,17 @@ func NewRouter(pgdb *sqlx.DB, rdb *redis.Client) http.Handler {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
-	////////////////
+
 	r.Get("/yaml", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "docs/swagger.yaml")
 	})
+
 	r.Mount("/swagger/", httpSwagger.WrapHandler)
-	///////////////
+
 	r.Handle("/metrics", promhttp.Handler())
-	///////////////
-	MangaHandler := handler.NewMangaHandler(pgdb, rdb)
-	UserHandler := handler.NewUserHandler(pgdb, rdb)
+
+	MangaHandler := handler.NewMangaHandler(sqlc, sqlx, rdb)
+	UserHandler := handler.NewUserHandler(sqlc, sqlx, rdb)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello World"))
@@ -59,12 +61,12 @@ func NewRouter(pgdb *sqlx.DB, rdb *redis.Client) http.Handler {
 		// )))
 		r.Use(auth.AuthMiddleware)
 		r.Route("/user", func(r chi.Router) {
-			r.Get("/{email}", UserHandler.GetUser)
+			r.Get("/", UserHandler.GetUser)
 			r.Get("/session", UserHandler.GetSession)
 			r.Get("/favorite/one", UserHandler.IsUserFavorite)
-			r.Get("/favorite/list", UserHandler.UserFavList)
 			r.Post("/toggle/favorite", UserHandler.ToggleFavorite)
 			r.Delete("/delete", UserHandler.DeleteUser)
+			r.Get("/favorite/list", UserHandler.UserFavList)
 		})
 	})
 

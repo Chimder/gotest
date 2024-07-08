@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -26,7 +25,6 @@ func Encrypt(payload interface{}) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("token encrypt: %v", err)
 	}
-
 	return tokenString, nil
 }
 
@@ -49,7 +47,6 @@ func Decrypt(tokenString string, v interface{}) error {
 	}
 }
 
-// /////////////////////////////////////////////////////////////////////////
 type contextKey string
 type User struct {
 	Id        string         `json:"id"`
@@ -65,9 +62,7 @@ const userContextKey = contextKey("user")
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("manka_google_user")
-		log.Println("COOKIE", cookie)
 		if err != nil {
-			log.Println("COOKIE", err)
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
