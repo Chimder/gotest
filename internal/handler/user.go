@@ -50,15 +50,44 @@ func (u *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	op := "handler GetUser"
 	email := r.URL.Query().Get("email")
 
-	user, err := u.sqlc.GetUserByEmail(r.Context(), email)
-	if err != nil {
-		utils.WriteError(w, 500, op, err)
-		return
-	}
+	val, err := u.rdb.Get(r.Context(), email).Result()
+	if err == redis.Nil {
+		user, err := u.sqlc.GetUserByEmail(r.Context(), email)
+		if err != nil {
+			utils.WriteError(w, 500, op+"GUBE", err)
+			return
+		}
 
-	if err := utils.WriteJSON(w, 200, user); err != nil {
-		utils.WriteError(w, 500, op, err)
+		userJSON, err := json.Marshal(user)
+		if err != nil {
+			utils.WriteError(w, 500, op+"MA", err)
+			return
+		}
+		err = u.rdb.Set(r.Context(), email, userJSON, time.Minute*10).Err()
+		if err != nil {
+			utils.WriteError(w, 500, op+"SET", err)
+			return
+		}
+
+		if err := utils.WriteJSON(w, 200, &user); err != nil {
+			utils.WriteError(w, 500, op+"WJ", err)
+			return
+		}
+	} else if err != nil {
+		utils.WriteError(w, 500, op+"ELSE", err)
 		return
+	} else {
+		var user queries.User
+		err := json.Unmarshal([]byte(val), &user)
+		if err != nil {
+			utils.WriteError(w, 500, op+"UNM", err)
+			return
+		}
+
+		if err := utils.WriteJSON(w, 200, &user); err != nil {
+			utils.WriteError(w, 500, op+"WJ2", err)
+			return
+		}
 	}
 }
 
@@ -88,7 +117,7 @@ func (u *UserHandler) UserFavList(w http.ResponseWriter, r *http.Request) {
 			utils.WriteJSON(w, 200, []Manga{})
 			return
 		}
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"GUFBE", err)
 		return
 	}
 
@@ -99,12 +128,12 @@ func (u *UserHandler) UserFavList(w http.ResponseWriter, r *http.Request) {
 
 	favoriteMangas, err := u.sqlc.GetAnimeByNames(r.Context(), favorites)
 	if err != nil {
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"GABN", err)
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, favoriteMangas); err != nil {
-		utils.WriteError(w, 500, op, err)
+	if err := utils.WriteJSON(w, 200, &favoriteMangas); err != nil {
+		utils.WriteError(w, 500, op+"WJ", err)
 		return
 	}
 }
@@ -128,10 +157,10 @@ func (u *UserHandler) IsUserFavorite(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			utils.WriteError(w, 500, op, err)
+			utils.WriteError(w, 500, op+"GUBE", err)
 			return
 		}
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"NIL", err)
 		return
 	}
 
@@ -144,7 +173,7 @@ func (u *UserHandler) IsUserFavorite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := utils.WriteJSON(w, 200, FavoriteResponse{IsFavorite: isAnimeInFavorites}); err != nil {
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"WJ", err)
 		return
 	}
 }
@@ -164,7 +193,7 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
-		utils.WriteError(w, 401, op, nil)
+		utils.WriteError(w, 401, op+"GUFC", nil)
 		return
 	}
 
@@ -175,7 +204,7 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	err := u.sqlc.DeleteUserByEmail(r.Context(), email)
 	if err != nil {
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"DUBE", err)
 		return
 	}
 
@@ -191,7 +220,7 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 	if err := utils.WriteJSON(w, 200, SuccessResponse{Success: "User deleted"}); err != nil {
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"WJ", err)
 		return
 	}
 }
@@ -210,7 +239,7 @@ func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) 
 	var newUser queries.User
 
 	if err := utils.ParseJSON(r, &newUser); err != nil {
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"PJ", err)
 		return
 	}
 
@@ -218,24 +247,23 @@ func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		if err == sql.ErrNoRows {
 			user, err = u.sqlc.InsertUser(r.Context(), queries.InsertUserParams{
-				// ID:    newUser.ID,
 				Email: newUser.Email,
 				Name:  newUser.Name,
 				Image: newUser.Image,
 			})
 			if err != nil {
-				utils.WriteError(w, 500, op, err)
+				utils.WriteError(w, 500, op+"IU", err)
 				return
 			}
 		} else {
-			utils.WriteError(w, 500, op, err)
+			utils.WriteError(w, 500, op+"GUBE", err)
 			return
 		}
 	}
 
 	encoded, err := auth.Encrypt(user)
 	if err != nil {
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"ENC", err)
 		return
 	}
 
@@ -250,8 +278,8 @@ func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) 
 	}
 	http.SetCookie(w, cookie)
 
-	if err := utils.WriteJSON(w, 200, user); err != nil {
-		utils.WriteError(w, 500, op, err)
+	if err := utils.WriteJSON(w, 200, &user); err != nil {
+		utils.WriteError(w, 500, op+"WJ", err)
 		return
 	}
 }
@@ -270,7 +298,7 @@ func (u *UserHandler) DeleteCookie(w http.ResponseWriter, r *http.Request) {
 
 	_, err := r.Cookie(cookieName)
 	if err != nil {
-		utils.WriteError(w, 404, op, err)
+		utils.WriteError(w, 404, op+"CK", err)
 		return
 	}
 
@@ -300,12 +328,12 @@ func (u *UserHandler) GetSession(w http.ResponseWriter, r *http.Request) {
 	op := "handler GetSession"
 	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
-		utils.WriteError(w, 401, op, nil)
+		utils.WriteError(w, 401, op+"GUFC", nil)
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, user); err != nil {
-		utils.WriteError(w, 401, op, err)
+	if err := utils.WriteJSON(w, 200, &user); err != nil {
+		utils.WriteError(w, 401, op+"WJ", err)
 	}
 }
 
@@ -326,7 +354,7 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 
 	user, err := u.sqlc.GetUserByEmail(r.Context(), email)
 	if err != nil {
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"GUBE", err)
 		return
 	}
 
@@ -341,7 +369,7 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 	if !isAnimeInFavorites {
 		err = u.sqlc.UpdateAnimePopularity(r.Context(), name)
 		if err != nil {
-			utils.WriteError(w, 500, op, err)
+			utils.WriteError(w, 500, op+"UAP", err)
 			return
 		}
 
@@ -351,12 +379,12 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 			Email:    email,
 		})
 		if err != nil {
-			utils.WriteError(w, 500, op, err)
+			utils.WriteError(w, 500, op+"UUF", err)
 			return
 		}
 
 		if err := json.NewEncoder(w).Encode(SuccessResponse{Success: "Manga added"}); err != nil {
-			utils.WriteError(w, 500, op, err)
+			utils.WriteError(w, 500, op+"ENC", err)
 			return
 		}
 	} else {
@@ -372,12 +400,12 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 			Email:    email,
 		})
 		if err != nil {
-			utils.WriteError(w, 500, op, err)
+			utils.WriteError(w, 500, op+"UUF2", err)
 			return
 		}
 
 		if err := utils.WriteJSON(w, 200, SuccessResponse{Success: "Manga deleted"}); err != nil {
-			utils.WriteError(w, 500, op, err)
+			utils.WriteError(w, 500, op+"WJ", err)
 			return
 		}
 	}

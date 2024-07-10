@@ -18,7 +18,6 @@ func WriteJSON(w http.ResponseWriter, status int, v interface{}) error {
 	w.WriteHeader(status)
 	_, err = w.Write(data)
 	return err
-
 }
 
 func WriteError(w http.ResponseWriter, status int, errorMessage string, err error) {

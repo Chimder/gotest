@@ -14,6 +14,7 @@ type EnvVars struct {
 	GOOGLE_CLIENT_ID     string
 	GOOGLE_CLIENT_SECRET string
 	IS_PROD              bool
+	COOKIE_SECRET        string
 }
 
 func LoadEnv() EnvVars {
@@ -27,6 +28,8 @@ func LoadEnv() EnvVars {
 	googleClientId := os.Getenv("GOOGLE_CLIENT_ID")
 	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
 
+	cookieSecret := os.Getenv("COOKIE_SECRET")
+
 	isProdStr := os.Getenv("IS_PROD")
 	isProd, err := strconv.ParseBool(isProdStr)
 	if err != nil {
@@ -39,5 +42,6 @@ func LoadEnv() EnvVars {
 		GOOGLE_CLIENT_ID:     googleClientId,
 		GOOGLE_CLIENT_SECRET: googleClientSecret,
 		IS_PROD:              isProd,
+		COOKIE_SECRET:        cookieSecret,
 	}
 }

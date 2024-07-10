@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -70,12 +69,12 @@ func (m *MangaHandler) Mangas(w http.ResponseWriter, r *http.Request) {
 
 	mangas, err := m.sqlc.ListMangas(r.Context())
 	if err != nil {
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"LM", err)
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, mangas); err != nil {
-		utils.WriteError(w, 500, op, err)
+	if err := utils.WriteJSON(w, 200, &mangas); err != nil {
+		utils.WriteError(w, 500, op+"WJ", err)
 		return
 	}
 }
@@ -91,21 +90,20 @@ func (m *MangaHandler) Mangas(w http.ResponseWriter, r *http.Request) {
 // @Router /manga [get]
 func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 	op := "handler Manga"
-	ctx := context.Background()
 	name := r.URL.Query().Get("name")
 
-	val, err := m.rdb.Get(ctx, name).Result()
+	val, err := m.rdb.Get(r.Context(), name).Result()
 	if err == redis.Nil {
 
 		manga, err := m.sqlc.GetMangaByName(r.Context(), name)
 		if err != nil {
-			utils.WriteError(w, 500, op, err)
+			utils.WriteError(w, 500, op+"GMBN", err)
 			return
 		}
 
 		chapters, err := m.sqlc.ListChaptersByAnimeName(r.Context(), name)
 		if err != nil {
-			utils.WriteError(w, 500, op, err)
+			utils.WriteError(w, 500, op+"LCBAN", err)
 			return
 		}
 
@@ -116,34 +114,36 @@ func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 
 		mangaJSON, err := json.Marshal(mangaWithChapter)
 		if err != nil {
-			utils.WriteError(w, 500, op, err)
+			utils.WriteError(w, 500, op+"M", err)
 			return
 		}
 
-		err = m.rdb.Set(ctx, name, mangaJSON, time.Minute).Err()
+		err = m.rdb.Set(r.Context(), name, mangaJSON, time.Minute).Err()
 		if err != nil {
-			utils.WriteError(w, 500, op, err)
+			utils.WriteError(w, 500, op+"SET", err)
 			return
 		}
 
 		if err := json.NewEncoder(w).Encode(mangaWithChapter); err != nil {
-			utils.WriteError(w, 500, op, err)
+			utils.WriteError(w, 500, op+"ENCODE", err)
 			return
 		}
 	} else {
 		if err != nil {
 			log.Printf("Error fetching from Redis: %v", err)
+			utils.WriteError(w, 500, op, err)
+			return
 		}
 
 		var mangaWithChapter MangaWithChapters
 		err := json.Unmarshal([]byte(val), &mangaWithChapter)
 		if err != nil {
-			utils.WriteError(w, 500, op, err)
+			utils.WriteError(w, 500, op+"UNM", err)
 			return
 		}
 
-		if err := utils.WriteJSON(w, 200, mangaWithChapter); err != nil {
-			utils.WriteError(w, 500, op, err)
+		if err := utils.WriteJSON(w, 200, &mangaWithChapter); err != nil {
+			utils.WriteError(w, 500, op+"WJ", err)
 			return
 		}
 	}
@@ -166,17 +166,17 @@ func (m *MangaHandler) Chapter(w http.ResponseWriter, r *http.Request) {
 
 	chap, err := strconv.Atoi(chapStr)
 	if err != nil {
-		utils.WriteError(w, 400, op, err)
+		utils.WriteError(w, 400, op+"ATOI", err)
 		return
 	}
 	chapter, err := m.sqlc.GetChapterByAnimeNameAndNumber(r.Context(), queries.GetChapterByAnimeNameAndNumberParams{AnimeName: name, Chapter: int32(chap)})
 	if err != nil {
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"GCBANAN", err)
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, chapter); err != nil {
-		utils.WriteError(w, 500, op, err)
+	if err := utils.WriteJSON(w, 200, &chapter); err != nil {
+		utils.WriteError(w, 500, op+"WJ", err)
 		return
 	}
 }
@@ -194,12 +194,12 @@ func (m *MangaHandler) Popular(w http.ResponseWriter, r *http.Request) {
 
 	animes, err := m.sqlc.ListPopularMangas(r.Context())
 	if err != nil {
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"LPM", err)
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, animes); err != nil {
-		utils.WriteError(w, 500, op, err)
+	if err := utils.WriteJSON(w, 200, &animes); err != nil {
+		utils.WriteError(w, 500, op+"WJ", err)
 		return
 	}
 }
@@ -209,12 +209,12 @@ func (m *MangaHandler) Search(w http.ResponseWriter, r *http.Request) {
 
 	animes, err := m.sqlc.ListMangas(r.Context())
 	if err != nil {
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"LM", err)
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, animes); err != nil {
-		utils.WriteError(w, 500, op, err)
+	if err := utils.WriteJSON(w, 200, &animes); err != nil {
+		utils.WriteError(w, 500, op+"WJ", err)
 		return
 	}
 }
@@ -308,12 +308,12 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 
 	err = m.sqlx.Select(&mangas, query, args...)
 	if err != nil {
-		utils.WriteError(w, 500, op, err)
+		utils.WriteError(w, 500, op+"SEL", err)
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, mangas); err != nil {
-		utils.WriteError(w, 500, op, err)
+	if err := utils.WriteJSON(w, 200, &mangas); err != nil {
+		utils.WriteError(w, 500, op+"WJ", err)
 		return
 	}
 }

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/chimas/GoProject/internal/config"
+	"github.com/chimas/GoProject/utils"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/lib/pq"
 )
@@ -14,7 +16,7 @@ import (
 type Jwt struct {
 }
 
-var secretKey = []byte("your_secret_key2")
+var secretKey = []byte(config.LoadEnv().COOKIE_SECRET)
 
 func Encrypt(payload interface{}) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
@@ -63,14 +65,14 @@ func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("manka_google_user")
 		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			utils.WriteError(w, 401, "Unauthorized Cookie", err)
 			return
 		}
 
 		var user User
 		err = Decrypt(cookie.Value, &user)
 		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			utils.WriteError(w, 401, "Unauthorized Decr", err)
 			return
 		}
 
