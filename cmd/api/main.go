@@ -42,4 +42,5 @@ func main() {
 	}
 	srv.Close(ctx)
 	fmt.Println("Server gracefully stopped")
+	os.Exit(0)
 }
