@@ -6,8 +6,8 @@ export const requests = new Counter("http_reqs");
 
 export const options = {
   stages: [
-    { duration: "1m", target: 1000 }, // Stay at 100 users for 3 minutes
-    // { duration: "1m", target: 2000 }, // Stay at 100 users for 3 minutes
+    { duration: "1m", target: 100 }, // Stay at 100 users for 3 minutes
+    { duration: "1m", target: 500 }, // Stay at 100 users for 3 minutes
     // { duration: "1m", target: 3000 }, // Stay at 100 users for 3 minutes
   ],
   thresholds: {
