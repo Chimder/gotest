@@ -10,7 +10,7 @@ import (
 	_ "github.com/chimas/GoProject/docs"
 	"github.com/chimas/GoProject/internal/db"
 	"github.com/chimas/GoProject/internal/queries"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jmoiron/sqlx"
 
 	_ "github.com/lib/pq"
@@ -19,7 +19,7 @@ import (
 
 type Server struct {
 	httpServer *http.Server
-	sqlc       *pgx.Conn
+	sqlc       *pgxpool.Pool
 	sqlx       *sqlx.DB
 	rdb        *redis.Client
 }
@@ -66,7 +66,7 @@ func NewServer() *Server {
 
 func (s *Server) Close(ctx context.Context) {
 	if s.sqlc != nil {
-		s.sqlc.Close(ctx)
+		s.sqlc.Close()
 	}
 	if s.sqlx != nil {
 		s.sqlx.Close()

@@ -5,15 +5,21 @@ import (
 	"log"
 
 	"github.com/chimas/GoProject/internal/config"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
-func DBConn(ctx context.Context) (*pgx.Conn, *sqlx.DB, error) {
-	sqlcDB, err := pgx.Connect(ctx, config.LoadEnv().DB_URL)
+func DBConn(ctx context.Context) (*pgxpool.Pool, *sqlx.DB, error) {
+	cfg, err := pgxpool.ParseConfig(config.LoadEnv().DB_URL)
 	if err != nil {
-		log.Fatalf("Unable to connect to database: %v", err)
+		log.Fatalf("Unable to parse config: %v", err)
+		return nil, nil, err
+	}
+
+	sqlcPool, err := pgxpool.NewWithConfig(ctx, cfg)
+	if err != nil {
+		log.Fatalf("Unable to create connection pool: %v", err)
 		return nil, nil, err
 	}
 
@@ -23,5 +29,5 @@ func DBConn(ctx context.Context) (*pgx.Conn, *sqlx.DB, error) {
 		return nil, nil, err
 	}
 
-	return sqlcDB, sqlxDB, nil
+	return sqlcPool, sqlxDB, nil
 }
