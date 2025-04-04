@@ -4,14 +4,13 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	_ "github.com/chimas/GoProject/docs"
+	"github.com/chimas/GoProject/internal/config"
 	"github.com/chimas/GoProject/internal/db"
-	"github.com/chimas/GoProject/internal/queries"
+	"github.com/chimas/GoProject/internal/routers"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jmoiron/sqlx"
 
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
@@ -19,38 +18,32 @@ import (
 
 type Server struct {
 	httpServer *http.Server
-	sqlc       *pgxpool.Pool
-	sqlx       *sqlx.DB
+	db         *pgxpool.Pool
 	rdb        *redis.Client
 }
 
 func NewServer() *Server {
+	ctx := context.Background()
+
 	var PORT string
-	if PORT = os.Getenv("PORT"); PORT == "" {
+	if PORT = config.LoadEnv().PORT; PORT == "" {
 		PORT = "4000"
 	}
 	///////////////
 	recordMetrics()
 	///////////////
 
-	ctx := context.Background()
-	sqlc, sqlx, err := db.DBConn(ctx)
+	pgdb, err := db.DBConn(ctx)
 	if err != nil {
-		log.Fatal("Unable to connect to database:", err)
+		log.Fatal("Unable to connect to postgres:", err)
 	}
-	sqlcQueries := queries.New(sqlc)
 
-	opt, err := db.RedisCon()
-	if err != nil {
-		log.Fatal("Unable to connect to redis:", err)
-	}
-	rdb := redis.NewClient(opt)
-
+	rdb := db.RedisConn()
 	/////////////////////////////////////////////////////
 
 	httpServer := &http.Server{
 		Addr:         ":" + PORT,
-		Handler:      NewRouter(sqlcQueries, sqlx, rdb),
+		Handler:      routers.NewRouter(pgdb, rdb),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  time.Minute,
@@ -58,18 +51,14 @@ func NewServer() *Server {
 
 	return &Server{
 		httpServer: httpServer,
-		sqlc:       sqlc,
-		sqlx:       sqlx,
+		db:         pgdb,
 		rdb:        rdb,
 	}
 }
 
 func (s *Server) Close(ctx context.Context) {
-	if s.sqlc != nil {
-		s.sqlc.Close()
-	}
-	if s.sqlx != nil {
-		s.sqlx.Close()
+	if s.db != nil {
+		s.db.Close()
 	}
 	if s.rdb != nil {
 		s.rdb.Close()

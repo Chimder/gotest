@@ -1,15 +1,16 @@
-package server
+package routers
 
 import (
 	"net/http"
 
 	"github.com/chimas/GoProject/internal/auth"
 	"github.com/chimas/GoProject/internal/handler"
-	"github.com/chimas/GoProject/internal/queries"
+	"github.com/chimas/GoProject/internal/repository"
+	"github.com/chimas/GoProject/internal/service"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redis/go-redis/v9"
@@ -17,7 +18,7 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
-func NewRouter(sqlc *queries.Queries, sqlx *sqlx.DB, rdb *redis.Client) http.Handler {
+func NewRouter(db *pgxpool.Pool, rdb *redis.Client) http.Handler {
 
 	r := chi.NewRouter()
 	// r.Use(httprate.LimitByIP(6, 10*time.Second))
@@ -36,23 +37,29 @@ func NewRouter(sqlc *queries.Queries, sqlx *sqlx.DB, rdb *redis.Client) http.Han
 	r.Mount("/swagger/", httpSwagger.WrapHandler)
 
 	r.Handle("/metrics", promhttp.Handler())
+	repo := repository.NewRepository(db)
 
-	MangaHandler := handler.NewMangaHandler(sqlc, sqlx, rdb)
-	UserHandler := handler.NewUserHandler(sqlc, sqlx, rdb)
+	userService := service.NewUserService(repo)
+	mangaService := service.NewMangaService(repo)
+	chapterService := service.NewChapterService(repo)
+
+	userHandler := handler.NewUserHandler(userService)
+	mangaHandler := handler.NewMangaHandler(mangaService)
+	chapterHandler := handler.NewChapterHandler(chapterService)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello World"))
 	})
 	r.Route("/manga", func(r chi.Router) {
-		r.Get("/", MangaHandler.Manga)
-		r.Get("/many", MangaHandler.Mangas)
-		r.Get("/chapter", MangaHandler.Chapter)
-		r.Get("/popular", MangaHandler.Popular)
-		r.Get("/filter", MangaHandler.Filter)
+		r.Get("/", mangaHandler.Manga)
+		r.Get("/many", mangaHandler.Mangas)
+		r.Get("/popular", mangaHandler.Popular)
+		r.Get("/chapter", chapterHandler.Chapter)
+		// r.Get("/filter", mangaHandler.Filter)
 	})
 
-	r.Post("/user/create", UserHandler.CreateOrCheckUser)
-	r.Get("/user/cookie/delete", UserHandler.DeleteCookie)
+	r.Post("/user/create", userHandler.CreateOrCheckUser)
+	r.Get("/user/cookie/delete", userHandler.DeleteCookie)
 
 	r.Group(func(r chi.Router) {
 		// r.Use(httprate.Limit(3, time.Minute, httprate.WithKeyFuncs(
@@ -61,12 +68,12 @@ func NewRouter(sqlc *queries.Queries, sqlx *sqlx.DB, rdb *redis.Client) http.Han
 		// )))
 		r.Use(auth.AuthMiddleware)
 		r.Route("/user", func(r chi.Router) {
-			r.Get("/", UserHandler.GetUser)
-			r.Get("/session", UserHandler.GetSession)
-			r.Get("/favorite/one", UserHandler.IsUserFavorite)
-			r.Post("/toggle/favorite", UserHandler.ToggleFavorite)
-			r.Delete("/delete", UserHandler.DeleteUser)
-			r.Get("/favorite/list", UserHandler.UserFavList)
+			r.Get("/", userHandler.GetUser)
+			r.Get("/session", userHandler.GetSession)
+			r.Get("/favorite/one", userHandler.IsUserFavorite)
+			r.Post("/toggle/favorite", userHandler.ToggleFavorite)
+			r.Delete("/delete", userHandler.DeleteUser)
+			r.Get("/favorite/list", userHandler.UserFavList)
 		})
 	})
 
