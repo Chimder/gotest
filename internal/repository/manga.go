@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,6 +15,7 @@ type MangaRepository interface {
 	ListMangas(ctx context.Context) ([]MangaRepo, error)
 	ListPopularMangas(ctx context.Context) ([]MangaRepo, error)
 	UpdateMangaPopularity(ctx context.Context, name string) error
+	FilterMangas(ctx context.Context, f MangaFilter) ([]MangaRepo, error)
 }
 
 type mangaRepository struct {
@@ -59,6 +62,55 @@ func (q *mangaRepository) ListPopularMangas(ctx context.Context) ([]MangaRepo, e
 		return nil, err
 	}
 	return pgx.CollectRows(rows, pgx.RowToStructByName[MangaRepo])
+}
+
+func (q *mangaRepository) FilterMangas(ctx context.Context, f MangaFilter) ([]MangaRepo, error) {
+	args := []interface{}{}
+	where := []string{}
+	i := 1
+
+	query := strings.Builder{}
+	query.WriteString(`SELECT * FROM "Anime"`)
+	if f.Name != "" {
+		where = append(where, fmt.Sprintf(`"name" ILIKE $%d`, i))
+		args = append(args, "%"+f.Name+"%")
+		i++
+	}
+	if f.Status != "" {
+		where = append(where, fmt.Sprintf(`"status" = $%d`, i))
+		args = append(args, f.Status)
+		i++
+	}
+	if f.Country != "" {
+		where = append(where, fmt.Sprintf(`"country" = $%d`, i))
+		args = append(args, f.Country)
+		i++
+	}
+	for _, genre := range f.Genres {
+		where = append(where, fmt.Sprintf(`"genres" @> ARRAY[$%d]`, i))
+		args = append(args, genre)
+		i++
+	}
+
+	if len(where) > 0 {
+		query.WriteString(" WHERE ")
+		query.WriteString(strings.Join(where, " AND "))
+
+	}
+	if f.OrderField != "" && f.OrderSort != "" {
+		query.WriteString(fmt.Sprintf(` ORDER BY "%s" %s`, f.OrderField, f.OrderSort))
+	}
+	if f.Page > 0 && f.PerPage > 0 {
+		query.WriteString(fmt.Sprintf(` LIMIT %d OFFSET %d`, f.PerPage, (f.Page-1)*f.PerPage))
+	}
+
+	rows, err := q.db.Query(ctx, query.String(), args...)
+	if err != nil {
+		return nil, fmt.Errorf("repo.FilterMangas query: %w", err)
+	}
+	defer rows.Close()
+
+	return pgx.CollectRows(rows, pgx.RowToStructByNameLax[MangaRepo])
 }
 
 func (q *mangaRepository) UpdateMangaPopularity(ctx context.Context, name string) error {

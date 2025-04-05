@@ -2,8 +2,10 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/chimas/GoProject/internal/repository"
 	"github.com/chimas/GoProject/internal/service"
 	"github.com/chimas/GoProject/utils"
 	"github.com/lib/pq"
@@ -154,74 +156,81 @@ type FilterParams struct {
 // @Param  perPage query int false "perPage"
 // @Success 200 {array} MangaSwag
 // @Router /manga/filter [get]
-// func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
-// 	op := "Handler Filter"
-// 	params := r.URL.Query()
-// 	name := params.Get("name")
-// 	genres := params["genres[]"]
-// 	status := params.Get("status")
-// 	country := params.Get("country")
-// 	orderField := params.Get("orderField")
-// 	orderSort := params.Get("orderSort")
+func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
+	// op := "Handler Filter"
+	q := r.URL.Query()
 
-// 	page, err := strconv.Atoi(params.Get("page"))
-// 	if err != nil {
-// 		log.Println("not have page")
-// 	}
-// 	perPage, err := strconv.Atoi(params.Get("perPage"))
-// 	if err != nil {
-// 		log.Println("not have perPage")
-// 	}
+	page, _ := strconv.Atoi(q.Get("page"))
+	perPage, _ := strconv.Atoi(q.Get("perPage"))
 
-// 	var mangas []Manga
-// 	query := `SELECT * FROM "Anime"`
-// 	args := []interface{}{}
-// 	i := 1
+	filter := repository.MangaFilter{
+		Name:       q.Get("name"),
+		Genres:     q["genres[]"],
+		Status:     q.Get("status"),
+		Country:    q.Get("country"),
+		OrderField: q.Get("orderField"),
+		OrderSort:  q.Get("orderSort"),
+		Page:       page,
+		PerPage:    perPage,
+	}
 
-// 	if name != "" || status != "" || country != "" || (len(genres) > 0 && genres[0] != "") {
-// 		query += " WHERE"
-// 	}
+	mangas, err := m.serv.FilterMangas(r.Context(), filter)
+	if err != nil {
+		utils.WriteError(w, 500, "handler.filter", err)
+		return
+	}
 
-// 	if name != "" {
-// 		name = "%" + name + "%"
-// 		query += fmt.Sprintf(` "name" ILIKE $%d AND`, i)
-// 		args = append(args, name)
-// 		i++
-// 	}
-// 	if status != "" {
-// 		query += fmt.Sprintf(` "status" = $%d AND`, i)
-// 		args = append(args, status)
-// 		i++
-// 	}
-// 	if country != "" {
-// 		query += fmt.Sprintf(` "country" = $%d AND`, i)
-// 		args = append(args, country)
-// 		i++
-// 	}
-// 	if len(genres) > 0 && genres[0] != "" {
-// 		for _, genre := range genres {
-// 			query += fmt.Sprintf(` "genres" @> ARRAY[$%d] AND`, i)
-// 			args = append(args, genre)
-// 			i++
-// 		}
-// 	}
+	utils.WriteJSON(w, 200, mangas)
 
-// 	query = strings.TrimSuffix(query, "AND")
-// 	if orderField != "" && orderSort != "" {
-// 		query += fmt.Sprintf(` ORDER BY "%s" %s`, orderField, orderSort)
-// 	}
-// 	if page > 0 && perPage > 0 {
-// 		query += fmt.Sprintf(` LIMIT %d OFFSET %d`, perPage, (page-1)*perPage)
-// 	}
+	// var mangas []Manga
+	// query := `SELECT * FROM "Anime"`
+	// args := []interface{}{}
+	// i := 1
 
-// 	err = m.sqlx.Select(&mangas, query, args...)
-// 	if err != nil {
-// 		utils.WriteError(w, 500, op+"SEL", err)
-// 		return
-// 	}
+	// if name != "" || status != "" || country != "" || (len(genres) > 0 && genres[0] != "") {
+	// 	query += " WHERE"
+	// }
 
-// 	if err := utils.WriteJSON(w, 200, &mangas); err != nil {
-// 		utils.WriteError(w, 500, op+"WJ", err)
-// 		return
-// 	}
-// }
+	// if name != "" {
+	// 	name = "%" + name + "%"
+	// 	query += fmt.Sprintf(` "name" ILIKE $%d AND`, i)
+	// 	args = append(args, name)
+	// 	i++
+	// }
+	// if status != "" {
+	// 	query += fmt.Sprintf(` "status" = $%d AND`, i)
+	// 	args = append(args, status)
+	// 	i++
+	// }
+	// if country != "" {
+	// 	query += fmt.Sprintf(` "country" = $%d AND`, i)
+	// 	args = append(args, country)
+	// 	i++
+	// }
+	// if len(genres) > 0 && genres[0] != "" {
+	// 	for _, genre := range genres {
+	// 		query += fmt.Sprintf(` "genres" @> ARRAY[$%d] AND`, i)
+	// 		args = append(args, genre)
+	// 		i++
+	// 	}
+	// }
+
+	// query = strings.TrimSuffix(query, "AND")
+	// if orderField != "" && orderSort != "" {
+	// 	query += fmt.Sprintf(` ORDER BY "%s" %s`, orderField, orderSort)
+	// }
+	// if page > 0 && perPage > 0 {
+	// 	query += fmt.Sprintf(` LIMIT %d OFFSET %d`, perPage, (page-1)*perPage)
+	// }
+
+	// err = m.sqlx.Select(&mangas, query, args...)
+	// if err != nil {
+	// 	utils.WriteError(w, 500, op+"SEL", err)
+	// 	return
+	// }
+
+	// if err := utils.WriteJSON(w, 200, &mangas); err != nil {
+	// 	utils.WriteError(w, 500, op+"WJ", err)
+	// 	return
+	// }
+}

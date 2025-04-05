@@ -18,7 +18,7 @@ func NewChapterHandler(s *service.ChapterService) *ChapterHandler {
 
 // @Summary Get a chapter
 // @Description Find Manga Chapter
-// @Tags Manga
+// @Tags Chapter
 // @ID get-chapter
 // @Accept  json
 // @Produce  json
@@ -36,7 +36,7 @@ func (m *ChapterHandler) Chapter(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, 400, op+"ATOI", err)
 		return
 	}
-	chapter, err := m.serv.GetChapterByAnimeNameAndNumber(r.Context(), name, chap)
+	chapter, err := m.serv.GetChapterByMangaNameAndNumber(r.Context(), name, chap)
 	if err != nil {
 		utils.WriteError(w, 500, op+"GCBANAN", err)
 		return

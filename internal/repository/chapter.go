@@ -9,8 +9,8 @@ import (
 )
 
 type ChapterRepository interface {
-	GetChapterByAnimeNameAndNumber(ctx context.Context, name string, chapter int) (ChapterRepo, error)
-	ListChaptersByAnimeName(ctx context.Context, animename string) ([]ChapterRepo, error)
+	GetChapterByMangaNameAndNumber(ctx context.Context, name string, chapter int) (ChapterRepo, error)
+	ListChaptersByMangaName(ctx context.Context, animename string) ([]ChapterRepo, error)
 }
 
 type chapterRepository struct {
@@ -36,7 +36,7 @@ type GetChapterByAnimeNameAndNumberParams struct {
 	Chapter   int32  `db:"chapter" json:"chapter"`
 }
 
-func (q *chapterRepository) GetChapterByAnimeNameAndNumber(ctx context.Context, name string, chapter int) (ChapterRepo, error) {
+func (q *chapterRepository) GetChapterByMangaNameAndNumber(ctx context.Context, name string, chapter int) (ChapterRepo, error) {
 	query := `SELECT * FROM "Chapter" WHERE "animeName" = @animeName AND chapter = @chapter`
 	rows, err := q.db.Query(ctx, query, pgx.NamedArgs{"animeName": name, "chapter": chapter})
 	if err != nil {
@@ -45,7 +45,7 @@ func (q *chapterRepository) GetChapterByAnimeNameAndNumber(ctx context.Context, 
 	return pgx.CollectOneRow(rows, pgx.RowToStructByName[ChapterRepo])
 }
 
-func (q *chapterRepository) ListChaptersByAnimeName(ctx context.Context, animename string) ([]ChapterRepo, error) {
+func (q *chapterRepository) ListChaptersByMangaName(ctx context.Context, animename string) ([]ChapterRepo, error) {
 	query := `SELECT * FROM "Chapter" WHERE "animeName" = $1`
 	rows, err := q.db.Query(ctx, query, animename)
 	if err != nil {

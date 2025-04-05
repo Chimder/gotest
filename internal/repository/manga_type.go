@@ -17,3 +17,14 @@ type MangaRepo struct {
 	Status        string        `db:"status" json:"status"`
 	Popularity    pgtype.Int4   `db:"popularity" json:"popularity"`
 }
+
+type MangaFilter struct {
+	Name       string
+	Genres     []string
+	Status     string
+	Country    string
+	OrderField string
+	OrderSort  string
+	Page       int
+	PerPage    int
+}

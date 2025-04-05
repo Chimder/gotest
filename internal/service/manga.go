@@ -25,7 +25,7 @@ func (s *MangaService) GetMangaByName(ctx context.Context, name string) (*MangaW
 		return nil, err
 	}
 
-	chapters, err := s.repo.Chapter.ListChaptersByAnimeName(ctx, name)
+	chapters, err := s.repo.Chapter.ListChaptersByMangaName(ctx, name)
 	if err != nil {
 		return nil, err
 
@@ -39,14 +39,6 @@ func (s *MangaService) GetMangaByName(ctx context.Context, name string) (*MangaW
 	return mangaWithChapter, err
 }
 
-// if err := utils.WriteJSON(w, 200, &mangaWithChapter); err != nil {
-
-// 	return repository.MangaRepo{}, err
-// }
-
-// return s.repo.Manga.GetMangaByName(ctx, name)
-// }
-
 func (s *MangaService) ListMangas(ctx context.Context) ([]repository.MangaRepo, error) {
 	return s.repo.Manga.ListMangas(ctx)
 }
@@ -55,6 +47,9 @@ func (s *MangaService) ListPopularMangas(ctx context.Context) ([]repository.Mang
 	return s.repo.Manga.ListPopularMangas(ctx)
 }
 
-// func (s *MangaService) UpdateMangaPopularity(ctx context.Context, name string) error {
-// 	return s.repo.Manga.UpdateMangaPopularity(ctx, name)
+func (s *MangaService) FilterMangas(ctx context.Context, filter repository.MangaFilter) ([]repository.MangaRepo, error) {
+	return s.repo.Manga.FilterMangas(ctx, filter)
+}
+// func (s *MangaService) FilterManga(ctx context.Context, name string) ([]repository.MangaRepo, error) {
+
 // }

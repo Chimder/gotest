@@ -25,6 +25,8 @@ type Server struct {
 func NewServer() *Server {
 	ctx := context.Background()
 
+	LoggerInit()
+
 	var PORT string
 	if PORT = config.LoadEnv().PORT; PORT == "" {
 		PORT = "4000"

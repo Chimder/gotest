@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -29,7 +30,7 @@ func main() {
 			fmt.Printf("Error listen server: %v\n", err)
 		}
 	}()
-	fmt.Printf("Server is listening on port %s...\n", srv.Addr())
+	slog.Info("Server is listening","port", srv.Addr())
 
 	<-sigCh
 	fmt.Println("Shutting down the server...")
@@ -41,6 +42,6 @@ func main() {
 		fmt.Printf("Error: %v\n", err)
 	}
 	srv.Close(ctx)
-	fmt.Println("Server gracefully stopped")
+	slog.Info("Server gracefully stopped")
 	os.Exit(0)
 }

@@ -55,7 +55,7 @@ func NewRouter(db *pgxpool.Pool, rdb *redis.Client) http.Handler {
 		r.Get("/many", mangaHandler.Mangas)
 		r.Get("/popular", mangaHandler.Popular)
 		r.Get("/chapter", chapterHandler.Chapter)
-		// r.Get("/filter", mangaHandler.Filter)
+		r.Get("/filter", mangaHandler.Filter)
 	})
 
 	r.Post("/user/create", userHandler.CreateOrCheckUser)

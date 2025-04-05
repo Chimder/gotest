@@ -8,21 +8,12 @@ import (
 	"github.com/chimas/GoProject/internal/repository"
 	"github.com/chimas/GoProject/internal/service"
 	"github.com/chimas/GoProject/utils"
-	"github.com/lib/pq"
 )
 
 type SuccessResponse struct {
 	Success string `json:"success"`
 }
 
-type User struct {
-	Id        string         `json:"id"`
-	Email     string         `json:"email"`
-	Name      string         `json:"name"`
-	Image     string         `json:"image"`
-	Favorite  pq.StringArray `json:"favorite"`
-	CreatedAt time.Time      `json:"createdAt" db:"createdAt"`
-}
 type UserHandler struct {
 	serv *service.UserService
 }
