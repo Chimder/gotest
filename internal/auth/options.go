@@ -65,14 +65,14 @@ func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("manka_google_user")
 		if err != nil {
-			utils.WriteError(w, 401, "Unauthorized Cookie", err)
+			utils.WriteError(w, 401, "Unauthorized Cookie")
 			return
 		}
 
 		var user User
 		err = Decrypt(cookie.Value, &user)
 		if err != nil {
-			utils.WriteError(w, 401, "Unauthorized Decr", err)
+			utils.WriteError(w, 401, "Unauthorized Decr")
 			return
 		}
 

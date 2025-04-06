@@ -42,7 +42,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.MangaSwag"
+                            "$ref": "#/definitions/models.MangaResp"
                         }
                     }
                 }
@@ -58,7 +58,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Manga"
+                    "Chapter"
                 ],
                 "summary": "Get a chapter",
                 "operationId": "get-chapter",
@@ -82,7 +82,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.ChapterSwag"
+                            "$ref": "#/definitions/models.ChapterResp"
                         }
                     }
                 }
@@ -162,7 +162,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/handler.MangaSwag"
+                                "$ref": "#/definitions/models.MangaResp"
                             }
                         }
                     }
@@ -189,7 +189,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/handler.MangaSwag"
+                                "$ref": "#/definitions/models.MangaResp"
                             }
                         }
                     }
@@ -216,7 +216,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/handler.MangaSwag"
+                                "$ref": "#/definitions/models.MangaResp"
                             }
                         }
                     }
@@ -250,7 +250,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.UserSwag"
+                            "$ref": "#/definitions/models.UserResp"
                         }
                     }
                 }
@@ -276,7 +276,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/handler.Empty"
+                                "$ref": "#/definitions/models.Empty"
                             }
                         }
                     }
@@ -312,7 +312,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.UserSwag"
+                            "$ref": "#/definitions/models.UserResp"
                         }
                     }
                 }
@@ -380,7 +380,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/handler.MangaSwag"
+                                "$ref": "#/definitions/models.MangaResp"
                             }
                         }
                     }
@@ -445,7 +445,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handler.UserSwag"
+                            "$ref": "#/definitions/models.UserResp"
                         }
                     }
                 }
@@ -493,12 +493,25 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handler.ChapterSwag": {
+        "handler.FavoriteResponse": {
             "type": "object",
             "properties": {
-                "animeName": {
+                "isFavorite": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "handler.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "success": {
                     "type": "string"
-                },
+                }
+            }
+        },
+        "models.ChapterResp": {
+            "type": "object",
+            "properties": {
                 "chapter": {
                     "type": "integer"
                 },
@@ -511,23 +524,18 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "mangaName": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 }
             }
         },
-        "handler.Empty": {
+        "models.Empty": {
             "type": "object"
         },
-        "handler.FavoriteResponse": {
-            "type": "object",
-            "properties": {
-                "isFavorite": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "handler.MangaSwag": {
+        "models.MangaResp": {
             "type": "object",
             "properties": {
                 "author": {
@@ -535,12 +543,6 @@ const docTemplate = `{
                 },
                 "averageRating": {
                     "type": "number"
-                },
-                "chapters": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/handler.ChapterSwag"
-                    }
                 },
                 "country": {
                     "type": "string"
@@ -580,15 +582,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.SuccessResponse": {
-            "type": "object",
-            "properties": {
-                "success": {
-                    "type": "string"
-                }
-            }
-        },
-        "handler.UserSwag": {
+        "models.UserResp": {
             "type": "object",
             "properties": {
                 "createdAt": {

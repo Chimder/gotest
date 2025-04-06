@@ -5,17 +5,18 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/chimas/GoProject/internal/models"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type MangaRepository interface {
-	GetMangaByName(ctx context.Context, name string) (MangaRepo, error)
-	GetMangaByNames(ctx context.Context, names []string) ([]MangaRepo, error)
-	ListMangas(ctx context.Context) ([]MangaRepo, error)
-	ListPopularMangas(ctx context.Context) ([]MangaRepo, error)
+	GetMangaByName(ctx context.Context, name string) (models.MangaRepo, error)
+	GetMangaByNames(ctx context.Context, names []string) ([]models.MangaRepo, error)
+	ListMangas(ctx context.Context) ([]models.MangaRepo, error)
+	ListPopularMangas(ctx context.Context) ([]models.MangaRepo, error)
 	UpdateMangaPopularity(ctx context.Context, name string) error
-	FilterMangas(ctx context.Context, f MangaFilter) ([]MangaRepo, error)
+	FilterMangas(ctx context.Context, f models.MangaFilter) ([]models.MangaRepo, error)
 }
 
 type mangaRepository struct {
@@ -28,43 +29,43 @@ func NewMangaRepository(db *pgxpool.Pool) MangaRepository {
 	}
 }
 
-func (q *mangaRepository) GetMangaByName(ctx context.Context, name string) (MangaRepo, error) {
+func (q *mangaRepository) GetMangaByName(ctx context.Context, name string) (models.MangaRepo, error) {
 	query := `SELECT * FROM "Anime" WHERE name = $1`
 	rows, err := q.db.Query(ctx, query, name)
 	if err != nil {
-		return MangaRepo{}, err
+		return models.MangaRepo{}, err
 	}
-	return pgx.CollectOneRow(rows, pgx.RowToStructByName[MangaRepo])
+	return pgx.CollectOneRow(rows, pgx.RowToStructByName[models.MangaRepo])
 }
 
-func (q *mangaRepository) ListMangas(ctx context.Context) ([]MangaRepo, error) {
+func (q *mangaRepository) ListMangas(ctx context.Context) ([]models.MangaRepo, error) {
 	query := `SELECT * FROM "Anime"`
 	rows, err := q.db.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	return pgx.CollectRows(rows, pgx.RowToStructByName[MangaRepo])
+	return pgx.CollectRows(rows, pgx.RowToStructByName[models.MangaRepo])
 }
 
-func (q *mangaRepository) GetMangaByNames(ctx context.Context, names []string) ([]MangaRepo, error) {
+func (q *mangaRepository) GetMangaByNames(ctx context.Context, names []string) ([]models.MangaRepo, error) {
 	query := `SELECT * FROM "Anime" WHERE "name" = ANY(@name::text[])`
 	rows, err := q.db.Query(ctx, query, pgx.NamedArgs{"name": names})
 	if err != nil {
 		return nil, err
 	}
-	return pgx.CollectRows(rows, pgx.RowToStructByName[MangaRepo])
+	return pgx.CollectRows(rows, pgx.RowToStructByName[models.MangaRepo])
 }
 
-func (q *mangaRepository) ListPopularMangas(ctx context.Context) ([]MangaRepo, error) {
+func (q *mangaRepository) ListPopularMangas(ctx context.Context) ([]models.MangaRepo, error) {
 	query := `SELECT * FROM "Anime" ORDER BY "ratingCount" DESC LIMIT 14`
 	rows, err := q.db.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	return pgx.CollectRows(rows, pgx.RowToStructByName[MangaRepo])
+	return pgx.CollectRows(rows, pgx.RowToStructByName[models.MangaRepo])
 }
 
-func (q *mangaRepository) FilterMangas(ctx context.Context, f MangaFilter) ([]MangaRepo, error) {
+func (q *mangaRepository) FilterMangas(ctx context.Context, f models.MangaFilter) ([]models.MangaRepo, error) {
 	args := []interface{}{}
 	where := []string{}
 	i := 1
@@ -110,7 +111,7 @@ func (q *mangaRepository) FilterMangas(ctx context.Context, f MangaFilter) ([]Ma
 	}
 	defer rows.Close()
 
-	return pgx.CollectRows(rows, pgx.RowToStructByNameLax[MangaRepo])
+	return pgx.CollectRows(rows, pgx.RowToStructByNameLax[models.MangaRepo])
 }
 
 func (q *mangaRepository) UpdateMangaPopularity(ctx context.Context, name string) error {

@@ -24,7 +24,7 @@ func NewChapterHandler(s *service.ChapterService) *ChapterHandler {
 // @Produce  json
 // @Param  name query string true "Name of the Manga"
 // @Param  chapter query int true "Chapter of the Manga"
-// @Success 200 {object} ChapterSwag
+// @Success 200 {object} models.ChapterResp
 // @Router /manga/chapter [get]
 func (m *ChapterHandler) Chapter(w http.ResponseWriter, r *http.Request) {
 	op := "handler Chapter"
@@ -33,17 +33,14 @@ func (m *ChapterHandler) Chapter(w http.ResponseWriter, r *http.Request) {
 
 	chap, err := strconv.Atoi(chapStr)
 	if err != nil {
-		utils.WriteError(w, 400, op+"ATOI", err)
+		utils.WriteError(w, 400, op+"ATOI")
 		return
 	}
 	chapter, err := m.serv.GetChapterByMangaNameAndNumber(r.Context(), name, chap)
 	if err != nil {
-		utils.WriteError(w, 500, op+"GCBANAN", err)
+		utils.WriteError(w, 500, op+"GCBANAN")
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, &chapter); err != nil {
-		utils.WriteError(w, 500, op+"WJ", err)
-		return
-	}
+	utils.WriteJSON(w, 200, &chapter)
 }

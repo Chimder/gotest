@@ -3,17 +3,17 @@ package repository
 import (
 	"context"
 
-	"github.com/jackc/pgx/pgtype"
+	"github.com/chimas/GoProject/internal/models"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type UserRepository interface {
-	GetUserByEmail(ctx context.Context, email string) (UserRepo, error)
+	GetUserByEmail(ctx context.Context, email string) (models.UserRepo, error)
 	GetUserFavoritesByEmail(ctx context.Context, email string) ([]string, error)
 	UpdateUserFavorites(ctx context.Context, favorite []string, email string) error
 	DeleteUserByEmail(ctx context.Context, email string) error
-	InsertUser(ctx context.Context, arg InsertUserParams) (UserRepo, error)
+	InsertUser(ctx context.Context, arg InsertUserParams) (models.UserRepo, error)
 }
 
 type userRepository struct {
@@ -26,27 +26,18 @@ func NewUserRepository(db *pgxpool.Pool) UserRepository {
 	}
 }
 
-type UserRepo struct {
-	ID        string           `db:"id" json:"id"`
-	Name      string           `db:"name" json:"name"`
-	Email     string           `db:"email" json:"email"`
-	Image     string           `db:"image" json:"image"`
-	Favorite  []string         `db:"favorite" json:"favorite"`
-	CreatedAt pgtype.Timestamp `db:"createdAt" json:"createdAt"`
-}
-
 func (q *userRepository) DeleteUserByEmail(ctx context.Context, email string) error {
 	_, err := q.db.Exec(ctx, `DELETE FROM "User" WHERE "email" = $1`, email)
 	return err
 }
 
-func (q *userRepository) GetUserByEmail(ctx context.Context, email string) (UserRepo, error) {
+func (q *userRepository) GetUserByEmail(ctx context.Context, email string) (models.UserRepo, error) {
 	query := `SELECT * FROM "User" WHERE "email" = $1;`
 	rows, err := q.db.Query(ctx, query, email)
 	if err != nil {
-		return UserRepo{}, err
+		return models.UserRepo{}, err
 	}
-	return pgx.CollectOneRow(rows, pgx.RowToStructByName[UserRepo])
+	return pgx.CollectOneRow(rows, pgx.RowToStructByName[models.UserRepo])
 }
 
 func (q *userRepository) GetUserFavoritesByEmail(ctx context.Context, email string) ([]string, error) {
@@ -63,7 +54,7 @@ type InsertUserParams struct {
 	Image string `db:"image" json:"image"`
 }
 
-func (q *userRepository) InsertUser(ctx context.Context, arg InsertUserParams) (UserRepo, error) {
+func (q *userRepository) InsertUser(ctx context.Context, arg InsertUserParams) (models.UserRepo, error) {
 	query := `
 INSERT INTO "User" (id, email, name, image)
 VALUES (@id, @email, @name, @image)
@@ -75,10 +66,10 @@ RETURNING *
 		"name":  arg.Name,
 		"image": arg.Image})
 	if err != nil {
-		return UserRepo{}, err
+		return models.UserRepo{}, err
 	}
 
-	return pgx.CollectOneRow(rows, pgx.RowToStructByNameLax[UserRepo])
+	return pgx.CollectOneRow(rows, pgx.RowToStructByNameLax[models.UserRepo])
 }
 
 func (q *userRepository) UpdateUserFavorites(ctx context.Context, favorite []string, email string) error {

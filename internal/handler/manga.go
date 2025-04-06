@@ -3,12 +3,10 @@ package handler
 import (
 	"net/http"
 	"strconv"
-	"time"
 
-	"github.com/chimas/GoProject/internal/repository"
+	"github.com/chimas/GoProject/internal/models"
 	"github.com/chimas/GoProject/internal/service"
 	"github.com/chimas/GoProject/utils"
-	"github.com/lib/pq"
 )
 
 type MangaHandler struct {
@@ -19,51 +17,24 @@ func NewMangaHandler(s *service.MangaService) *MangaHandler {
 	return &MangaHandler{serv: s}
 }
 
-type Manga struct {
-	Name          string         `json:"name"`
-	Img           string         `json:"img"`
-	ImgHeader     string         `json:"imgHeader" db:"imgHeader"`
-	Describe      string         `json:"describe"`
-	Genres        pq.StringArray `json:"genres" db:"genres"`
-	Author        string         `json:"author"`
-	Country       string         `json:"country"`
-	Published     int            `json:"published"`
-	AverageRating float64        `json:"averageRating" db:"averageRating"`
-	RatingCount   int            `json:"ratingCount" db:"ratingCount"`
-	Status        string         `json:"status"`
-	Popularity    int            `json:"popularity"`
-	Id            int            `json:"id"`
-	Chapters      []Chapter      `json:"chapters"`
-}
-
-type Chapter struct {
-	Chapter   int            `json:"chapter"`
-	Img       pq.StringArray `json:"img" db:"img"`
-	Name      string         `json:"name"`
-	AnimeName string         `json:"animeName" db:"animeName"`
-	CreatedAt time.Time      `json:"createdAt" db:"createdAt"`
-}
-
 // @Summary Get all mangas
 // @Description Retrieve a list of all mangas
 // @Tags Manga
 // @ID get-all-mangas
 // @Accept  json
 // @Produce  json
-// @Success 200 {array} MangaSwag
+// @Success 200 {array} models.MangaResp
 // @Router /manga/many [get]
 func (m *MangaHandler) Mangas(w http.ResponseWriter, r *http.Request) {
 	op := "handler Mangas"
 
 	mangas, err := m.serv.ListMangas(r.Context())
 	if err != nil {
-		utils.WriteError(w, 500, op+"LM", err)
+		utils.WriteError(w, 500, op+"LM")
 		return
 	}
-	if err := utils.WriteJSON(w, 200, &mangas); err != nil {
-		utils.WriteError(w, 500, op+"WJ", err)
-		return
-	}
+	resp := models.MangasRespFromDB(mangas)
+	utils.WriteJSON(w, 200, &resp)
 }
 
 // @Summary Get a manga by name
@@ -73,7 +44,7 @@ func (m *MangaHandler) Mangas(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Param  name query string true "Name of the Manga"
-// @Success 200 {object} MangaSwag
+// @Success 200 {object} models.MangaResp
 // @Router /manga [get]
 func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 	op := "handler Manga"
@@ -81,14 +52,11 @@ func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 
 	manga, err := m.serv.GetMangaByName(r.Context(), name)
 	if err != nil {
-		utils.WriteError(w, 500, op+"GMBN", err)
+		utils.WriteError(w, 500, op+"GMBN")
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, &manga); err != nil {
-		utils.WriteError(w, 500, op+"WJ", err)
-		return
-	}
+	utils.WriteJSON(w, 200, &manga)
 }
 
 // @Summary Get popular mangas
@@ -97,21 +65,17 @@ func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 // @ID get-popular-manga
 // @Accept  json
 // @Produce  json
-// @Success 200 {array} MangaSwag
+// @Success 200 {array} models.MangaResp
 // @Router /manga/popular [get]
 func (m *MangaHandler) Popular(w http.ResponseWriter, r *http.Request) {
-	op := "handler Popular"
-
-	animes, err := m.serv.ListPopularMangas(r.Context())
+	mangas, err := m.serv.ListPopularMangas(r.Context())
 	if err != nil {
-		utils.WriteError(w, 500, op+"LPM", err)
+		utils.WriteError(w, 500, "Get Popular Mangas")
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, &animes); err != nil {
-		utils.WriteError(w, 500, op+"WJ", err)
-		return
-	}
+	resp := models.MangasRespFromDB(mangas)
+	utils.WriteJSON(w, 200, &resp)
 }
 
 func (m *MangaHandler) Search(w http.ResponseWriter, r *http.Request) {
@@ -119,14 +83,11 @@ func (m *MangaHandler) Search(w http.ResponseWriter, r *http.Request) {
 
 	animes, err := m.serv.ListMangas(r.Context())
 	if err != nil {
-		utils.WriteError(w, 500, op+"LM", err)
+		utils.WriteError(w, 500, op+"LM")
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, &animes); err != nil {
-		utils.WriteError(w, 500, op+"WJ", err)
-		return
-	}
+	utils.WriteJSON(w, 200, &animes)
 }
 
 type FilterParams struct {
@@ -154,7 +115,7 @@ type FilterParams struct {
 // @Param  orderSort query string false "sort of the Manga"
 // @Param  page query int false "page not 0"
 // @Param  perPage query int false "perPage"
-// @Success 200 {array} MangaSwag
+// @Success 200 {array} models.MangaResp
 // @Router /manga/filter [get]
 func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 	// op := "Handler Filter"
@@ -163,7 +124,7 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(q.Get("page"))
 	perPage, _ := strconv.Atoi(q.Get("perPage"))
 
-	filter := repository.MangaFilter{
+	filter := models.MangaFilter{
 		Name:       q.Get("name"),
 		Genres:     q["genres[]"],
 		Status:     q.Get("status"),
@@ -176,61 +137,9 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 
 	mangas, err := m.serv.FilterMangas(r.Context(), filter)
 	if err != nil {
-		utils.WriteError(w, 500, "handler.filter", err)
+		utils.WriteError(w, 500, "Filter Mangas")
 		return
 	}
 
 	utils.WriteJSON(w, 200, mangas)
-
-	// var mangas []Manga
-	// query := `SELECT * FROM "Anime"`
-	// args := []interface{}{}
-	// i := 1
-
-	// if name != "" || status != "" || country != "" || (len(genres) > 0 && genres[0] != "") {
-	// 	query += " WHERE"
-	// }
-
-	// if name != "" {
-	// 	name = "%" + name + "%"
-	// 	query += fmt.Sprintf(` "name" ILIKE $%d AND`, i)
-	// 	args = append(args, name)
-	// 	i++
-	// }
-	// if status != "" {
-	// 	query += fmt.Sprintf(` "status" = $%d AND`, i)
-	// 	args = append(args, status)
-	// 	i++
-	// }
-	// if country != "" {
-	// 	query += fmt.Sprintf(` "country" = $%d AND`, i)
-	// 	args = append(args, country)
-	// 	i++
-	// }
-	// if len(genres) > 0 && genres[0] != "" {
-	// 	for _, genre := range genres {
-	// 		query += fmt.Sprintf(` "genres" @> ARRAY[$%d] AND`, i)
-	// 		args = append(args, genre)
-	// 		i++
-	// 	}
-	// }
-
-	// query = strings.TrimSuffix(query, "AND")
-	// if orderField != "" && orderSort != "" {
-	// 	query += fmt.Sprintf(` ORDER BY "%s" %s`, orderField, orderSort)
-	// }
-	// if page > 0 && perPage > 0 {
-	// 	query += fmt.Sprintf(` LIMIT %d OFFSET %d`, perPage, (page-1)*perPage)
-	// }
-
-	// err = m.sqlx.Select(&mangas, query, args...)
-	// if err != nil {
-	// 	utils.WriteError(w, 500, op+"SEL", err)
-	// 	return
-	// }
-
-	// if err := utils.WriteJSON(w, 200, &mangas); err != nil {
-	// 	utils.WriteError(w, 500, op+"WJ", err)
-	// 	return
-	// }
 }

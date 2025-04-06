@@ -7,6 +7,7 @@ import (
 
 	"slices"
 
+	"github.com/chimas/GoProject/internal/models"
 	"github.com/chimas/GoProject/internal/repository"
 )
 
@@ -18,11 +19,11 @@ func NewUserService(repo *repository.Repository) *UserService {
 	return &UserService{repo: repo}
 }
 
-func (s *UserService) GetUserByEmail(ctx context.Context, email string) (repository.UserRepo, error) {
+func (s *UserService) GetUserByEmail(ctx context.Context, email string) (models.UserRepo, error) {
 	return s.repo.User.GetUserByEmail(ctx, email)
 }
 
-func (s *UserService) InsertUser(ctx context.Context, arg *repository.UserRepo) (repository.UserRepo, error) {
+func (s *UserService) InsertUser(ctx context.Context, arg *models.UserRepo) (models.UserRepo, error) {
 	user, err := s.repo.User.GetUserByEmail(ctx, arg.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -32,10 +33,10 @@ func (s *UserService) InsertUser(ctx context.Context, arg *repository.UserRepo) 
 				Image: arg.Image,
 			})
 			if err != nil {
-				return repository.UserRepo{}, fmt.Errorf("no rows %v", err)
+				return models.UserRepo{}, fmt.Errorf("no rows %v", err)
 			}
 		} else {
-			return repository.UserRepo{}, err
+			return models.UserRepo{}, err
 		}
 	}
 	return user, nil
@@ -88,7 +89,7 @@ func (s *UserService) ToggleFavorite(ctx context.Context, email string, name str
 		// }
 	}
 }
-func (s *UserService) GetUserFavorites(ctx context.Context, email string) ([]repository.MangaRepo, error) {
+func (s *UserService) GetUserFavorites(ctx context.Context, email string) ([]models.MangaRepo, error) {
 	favorites, err := s.repo.User.GetUserFavoritesByEmail(ctx, email)
 	if err != nil {
 		return nil, err

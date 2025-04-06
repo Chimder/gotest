@@ -5,14 +5,10 @@ import (
 	"time"
 
 	"github.com/chimas/GoProject/internal/auth"
-	"github.com/chimas/GoProject/internal/repository"
+	"github.com/chimas/GoProject/internal/models"
 	"github.com/chimas/GoProject/internal/service"
 	"github.com/chimas/GoProject/utils"
 )
-
-type SuccessResponse struct {
-	Success string `json:"success"`
-}
 
 type UserHandler struct {
 	serv *service.UserService
@@ -29,7 +25,7 @@ func NewUserHandler(s *service.UserService) *UserHandler {
 // @Accept  json
 // @Produce  json
 // @Param  email query string true "User Email"
-// @Success 200 {object} UserSwag
+// @Success 200 {object} models.UserResp
 // @Router /user [get]
 func (u *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	op := "handler GetUser"
@@ -37,21 +33,15 @@ func (u *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 	user, err := u.serv.GetUserByEmail(r.Context(), email)
 	if err != nil {
-		utils.WriteError(w, 500, op+"GUBE", err)
+		utils.WriteError(w, 500, op+"GUBE")
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, &user); err != nil {
-		utils.WriteError(w, 500, op+"WJ2", err)
-		return
-	}
+	utils.WriteJSON(w, 200, &user)
 }
 
 type FavoriteResponse struct {
 	IsFavorite bool `json:"isFavorite"`
-}
-type MangasSwags struct {
-	Mangas []MangaSwag `json:"Mangas"`
 }
 
 // @Summary User favorite Mangas
@@ -61,7 +51,7 @@ type MangasSwags struct {
 // @Accept  json
 // @Produce  json
 // @Param  email query string true "email"
-// @Success 200 {array} MangaSwag
+// @Success 200 {array} models.MangaResp
 // @Router /user/favorite/list [get]
 func (u *UserHandler) UserFavList(w http.ResponseWriter, r *http.Request) {
 	op := "handler UserFavList"
@@ -69,14 +59,11 @@ func (u *UserHandler) UserFavList(w http.ResponseWriter, r *http.Request) {
 
 	favorites, err := u.serv.GetUserFavorites(r.Context(), email)
 	if err != nil {
-		utils.WriteError(w, 500, op+"GUFBE", err)
+		utils.WriteError(w, 500, op+"GUFBE")
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, &favorites); err != nil {
-		utils.WriteError(w, 500, op+"WJ", err)
-		return
-	}
+	utils.WriteJSON(w, 200, &favorites)
 }
 
 // @Summary User favorite Manga
@@ -96,14 +83,15 @@ func (u *UserHandler) IsUserFavorite(w http.ResponseWriter, r *http.Request) {
 
 	isMangaIsFavorite, err := u.serv.IsUserFavorite(r.Context(), email, name)
 	if err != nil {
-		utils.WriteError(w, 500, op+"NIL", err)
+		utils.WriteError(w, 500, op+"NIL")
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, FavoriteResponse{IsFavorite: isMangaIsFavorite}); err != nil {
-		utils.WriteError(w, 500, op+"WJ", err)
-		return
-	}
+	utils.WriteJSON(w, 200, FavoriteResponse{IsFavorite: isMangaIsFavorite})
+}
+
+type SuccessResponse struct {
+	Success string `json:"success"`
 }
 
 // @Summary delete user by email
@@ -121,18 +109,18 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
-		utils.WriteError(w, 401, op+"GUFC", nil)
+		utils.WriteError(w, 401, op+"GUFC")
 		return
 	}
 
 	if user.Email != email {
-		utils.WriteError(w, 403, "Email does not match", nil)
+		utils.WriteError(w, 403, "Email does not match")
 		return
 	}
 
 	err := u.serv.DeleteUser(r.Context(), email)
 	if err != nil {
-		utils.WriteError(w, 500, op+"DUBE", err)
+		utils.WriteError(w, 500, op+"DUBE")
 		return
 	}
 
@@ -147,10 +135,7 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, cookie)
-	if err := utils.WriteJSON(w, 200, SuccessResponse{Success: "User deleted"}); err != nil {
-		utils.WriteError(w, 500, op+"WJ", err)
-		return
-	}
+	utils.WriteJSON(w, 200, SuccessResponse{Success: "User deleted"})
 }
 
 // @Summary Create or cheack user
@@ -160,26 +145,26 @@ func (u *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Param  body body string true "Auth Body"
-// @Success 200 {object} UserSwag
+// @Success 200 {object} models.UserResp
 // @Router /user/create [post]
 func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) {
 	op := "handler CreateOrCheckUser"
-	var newUser repository.UserRepo
+	var newUser models.UserRepo
 
 	if err := utils.ParseJSON(r, &newUser); err != nil {
-		utils.WriteError(w, 500, op+"PJ", err)
+		utils.WriteError(w, 500, op+"PJ")
 		return
 	}
 
 	user, err := u.serv.InsertUser(r.Context(), &newUser)
 	if err != nil {
-		utils.WriteError(w, 500, op+"Err insert user", err)
+		utils.WriteError(w, 500, op+"Err insert user")
 		return
 	}
 
 	encoded, err := auth.Encrypt(user)
 	if err != nil {
-		utils.WriteError(w, 500, op+"ENC", err)
+		utils.WriteError(w, 500, op+"ENC")
 		return
 	}
 
@@ -194,10 +179,7 @@ func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) 
 	}
 	http.SetCookie(w, cookie)
 
-	if err := utils.WriteJSON(w, 200, &user); err != nil {
-		utils.WriteError(w, 500, op+"WJ", err)
-		return
-	}
+	utils.WriteJSON(w, 200, &user)
 }
 
 // @Summary DeleteUserCookie
@@ -206,7 +188,7 @@ func (u *UserHandler) CreateOrCheckUser(w http.ResponseWriter, r *http.Request) 
 // @ID delete-user-cookie
 // @Accept  json
 // @Produce  json
-// @Success 200 {array} Empty
+// @Success 200 {array} models.Empty
 // @Router /user/cookie/delete [get]
 func (u *UserHandler) DeleteCookie(w http.ResponseWriter, r *http.Request) {
 	op := "handle/DeleteCookie"
@@ -214,7 +196,7 @@ func (u *UserHandler) DeleteCookie(w http.ResponseWriter, r *http.Request) {
 
 	_, err := r.Cookie(cookieName)
 	if err != nil {
-		utils.WriteError(w, 404, op+"CK", err)
+		utils.WriteError(w, 404, op+"CK")
 		return
 	}
 
@@ -238,19 +220,17 @@ func (u *UserHandler) DeleteCookie(w http.ResponseWriter, r *http.Request) {
 // @ID get-user-session
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} UserSwag
+// @Success 200 {object} models.UserResp
 // @Router /user/session [get]
 func (u *UserHandler) GetSession(w http.ResponseWriter, r *http.Request) {
 	op := "handler GetSession"
 	user, ok := auth.GetUserFromContext(r.Context())
 	if !ok {
-		utils.WriteError(w, 401, op+"GUFC", nil)
+		utils.WriteError(w, 401, op+"GUFC")
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, &user); err != nil {
-		utils.WriteError(w, 401, op+"WJ", err)
-	}
+	utils.WriteJSON(w, 200, &user)
 }
 
 // @Summary Toggle Favorite manga
@@ -270,12 +250,9 @@ func (u *UserHandler) ToggleFavorite(w http.ResponseWriter, r *http.Request) {
 
 	err := u.serv.ToggleFavorite(r.Context(), email, name)
 	if err != nil {
-		utils.WriteError(w, 500, op+"UUF2", err)
+		utils.WriteError(w, 500, op+"UUF2")
 		return
 	}
 
-	if err := utils.WriteJSON(w, 200, SuccessResponse{Success: "Manga toggled"}); err != nil {
-		utils.WriteError(w, 500, op+"WJ", err)
-		return
-	}
+	utils.WriteJSON(w, 200, SuccessResponse{Success: "Manga toggled"})
 }
