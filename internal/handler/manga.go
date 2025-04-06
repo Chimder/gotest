@@ -33,8 +33,7 @@ func (m *MangaHandler) Mangas(w http.ResponseWriter, r *http.Request) {
 		utils.WriteError(w, 500, op+"LM")
 		return
 	}
-	resp := models.MangasRespFromDB(mangas)
-	utils.WriteJSON(w, 200, &resp)
+	utils.WriteJSONRedis(w, 200, mangas)
 }
 
 // @Summary Get a manga by name
@@ -56,7 +55,7 @@ func (m *MangaHandler) Manga(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJSON(w, 200, &manga)
+	utils.WriteJSONRedis(w, 200, manga)
 }
 
 // @Summary Get popular mangas
@@ -74,20 +73,7 @@ func (m *MangaHandler) Popular(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := models.MangasRespFromDB(mangas)
-	utils.WriteJSON(w, 200, &resp)
-}
-
-func (m *MangaHandler) Search(w http.ResponseWriter, r *http.Request) {
-	op := "handler Search"
-
-	animes, err := m.serv.ListMangas(r.Context())
-	if err != nil {
-		utils.WriteError(w, 500, op+"LM")
-		return
-	}
-
-	utils.WriteJSON(w, 200, &animes)
+	utils.WriteJSONRedis(w, 200, mangas)
 }
 
 type FilterParams struct {

@@ -9,14 +9,16 @@ import (
 
 	"github.com/chimas/GoProject/internal/models"
 	"github.com/chimas/GoProject/internal/repository"
+	"github.com/redis/go-redis/v9"
 )
 
 type UserService struct {
 	repo *repository.Repository
+	rdb  *redis.Client
 }
 
-func NewUserService(repo *repository.Repository) *UserService {
-	return &UserService{repo: repo}
+func NewUserService(repo *repository.Repository, rdb *redis.Client) *UserService {
+	return &UserService{repo: repo, rdb: rdb}
 }
 
 func (s *UserService) GetUserByEmail(ctx context.Context, email string) (models.UserRepo, error) {

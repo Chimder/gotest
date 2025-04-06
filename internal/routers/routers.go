@@ -39,9 +39,9 @@ func NewRouter(db *pgxpool.Pool, rdb *redis.Client) http.Handler {
 	r.Handle("/metrics", promhttp.Handler())
 	repo := repository.NewRepository(db)
 
-	userService := service.NewUserService(repo)
-	mangaService := service.NewMangaService(repo)
-	chapterService := service.NewChapterService(repo)
+	userService := service.NewUserService(repo, rdb)
+	mangaService := service.NewMangaService(repo, rdb)
+	chapterService := service.NewChapterService(repo, rdb)
 
 	userHandler := handler.NewUserHandler(userService)
 	mangaHandler := handler.NewMangaHandler(mangaService)

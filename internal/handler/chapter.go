@@ -42,5 +42,5 @@ func (m *ChapterHandler) Chapter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJSON(w, 200, &chapter)
+	utils.WriteJSONRedis(w, 200, chapter)
 }
