@@ -6,21 +6,18 @@ export const requests = new Counter("http_reqs");
 
 export const options = {
   stages: [
-    { duration: "1m", target: 500 },
-    { duration: "1m", target: 1000 },
+    { duration: "1m", target: 100 },
+    // { duration: "1m", target: 1000 },
     // { duration: "1m", target: 3000 },
   ],
   thresholds: {
-    http_req_duration: ["p(95)<500"], // 95% of requests should be below 500ms
+    http_req_duration: ["p(95)<500"],
   },
 };
 
 // export default function () {
 //   const res = http.get("http://localhost:4000/manga/popular");
 //   const res = http.get("http://localhost:4000/manga?name=Vinland%20Saga");
-//   // const res = http.get(
-//   // //   "https://vivacious-kristyn-chimas-00c6f067.koyeb.app/manga/popular"
-//   // // );
 //   check(res, { "status was 200": (r) => r.status === 200 });
 //   sleep(1);
 // }

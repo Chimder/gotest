@@ -16,7 +16,7 @@ definitions:
         type: integer
       createdAt:
         type: string
-      genres:
+      img:
         items:
           type: string
         type: array
@@ -146,7 +146,7 @@ paths:
         in: query
         items:
           type: string
-        name: genres
+        name: genres[]
         type: array
       - description: Name of the Manga
         in: query

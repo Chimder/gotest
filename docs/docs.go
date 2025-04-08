@@ -116,7 +116,7 @@ const docTemplate = `{
                         },
                         "collectionFormat": "csv",
                         "description": "Chapter of the Manga",
-                        "name": "genres",
+                        "name": "genres[]",
                         "in": "query"
                     },
                     {
@@ -518,7 +518,7 @@ const docTemplate = `{
                 "createdAt": {
                     "type": "string"
                 },
-                "genres": {
+                "img": {
                     "type": "array",
                     "items": {
                         "type": "string"

@@ -49,7 +49,7 @@ func Decrypt(tokenString string, v interface{}) error {
 	}
 }
 
-type contextKey string
+// type contextKey string
 type User struct {
 	Id        string         `json:"id"`
 	Email     string         `json:"email"`
@@ -59,7 +59,7 @@ type User struct {
 	CreatedAt time.Time      `json:"createdAt" db:"createdAt"`
 }
 
-const userContextKey = contextKey("user")
+const userContextKey = "user"
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +76,9 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userContextKey, user)
+		key := userContextKey + user.Email
+
+		ctx := context.WithValue(r.Context(), key, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

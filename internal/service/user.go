@@ -48,7 +48,6 @@ func (s *UserService) ToggleFavorite(ctx context.Context, email string, name str
 
 	user, err := s.repo.User.GetUserByEmail(ctx, email)
 	if err != nil {
-		// utils.WriteError(w, 500, op+"GUBE", err)
 		return err
 	}
 
@@ -67,10 +66,6 @@ func (s *UserService) ToggleFavorite(ctx context.Context, email string, name str
 		}
 
 		return nil
-		// if err := json.NewEncoder(w).Encode(SuccessResponse{Success: "Manga added"}); err != nil {
-		// 	utils.WriteError(w, 500, op+"ENC", err)
-		// 	return
-		// }
 	} else {
 		newFavorites := []string{}
 		for _, favorite := range user.Favorite {

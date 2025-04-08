@@ -109,7 +109,7 @@
                         },
                         "collectionFormat": "csv",
                         "description": "Chapter of the Manga",
-                        "name": "genres",
+                        "name": "genres[]",
                         "in": "query"
                     },
                     {
@@ -511,7 +511,7 @@
                 "createdAt": {
                     "type": "string"
                 },
-                "genres": {
+                "img": {
                     "type": "array",
                     "items": {
                         "type": "string"

@@ -14,7 +14,7 @@ type ChapterRepo struct {
 
 type ChapterResp struct {
 	Chapter   int       `json:"chapter"`
-	Img       []string  `json:"genres"`
+	Img       []string  `json:"img"`
 	Name      string    `json:"name"`
 	MangaName string    `json:"mangaName"`
 	CreatedAt time.Time `json:"createdAt"`

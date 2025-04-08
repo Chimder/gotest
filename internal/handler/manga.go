@@ -94,7 +94,7 @@ type FilterParams struct {
 // @Accept  json
 // @Produce  json
 // @Param  name query string false "Name of the Manga"
-// @Param  genres query []string false "Chapter of the Manga"
+// @Param  genres[] query []string false "Chapter of the Manga"
 // @Param  status query string false "Name of the Manga"
 // @Param  country query string false "Chapter of the Manga"
 // @Param  orderField query string false "field of the Manga"
@@ -121,7 +121,8 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 		PerPage:    perPage,
 	}
 
-	mangas, err := m.serv.FilterMangas(r.Context(), filter)
+
+	mangas, err := m.serv.FilterMangas(r.Context(), &filter)
 	if err != nil {
 		utils.WriteError(w, 500, "Filter Mangas")
 		return

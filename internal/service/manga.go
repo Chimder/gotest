@@ -35,8 +35,6 @@ func (s *MangaService) GetMangaByName(ctx context.Context, name string) ([]byte,
 	var chapters []models.ChapterRepo
 	var mangaErr, chaptersErr error
 
-	start := time.Now()
-
 	go func() {
 		defer wg.Done()
 		manga, mangaErr = s.repo.Manga.GetMangaByName(ctx, name)
@@ -48,8 +46,6 @@ func (s *MangaService) GetMangaByName(ctx context.Context, name string) ([]byte,
 	}()
 
 	wg.Wait()
-	parallelTime := time.Since(start)
-	slog.Info("Execution times", "parallel", parallelTime)
 
 	if mangaErr != nil {
 		return nil, fmt.Errorf("failed to get manga: %w", mangaErr)
@@ -66,7 +62,7 @@ func (s *MangaService) GetMangaByName(ctx context.Context, name string) ([]byte,
 	}
 
 	go func() {
-		if err := s.rdb.Set(context.Background(), key, data, 1*time.Minute).Err(); err != nil {
+		if err := s.rdb.Set(context.Background(), key, data, 15*time.Minute).Err(); err != nil {
 			slog.Error("failed to cache manga", "key", key, "error", err)
 		}
 	}()
@@ -91,7 +87,7 @@ func (s *MangaService) ListMangas(ctx context.Context) ([]byte, error) {
 	}
 
 	go func() {
-		if err := s.rdb.Set(context.Background(), key, data, 1*time.Minute).Err(); err != nil {
+		if err := s.rdb.Set(context.Background(), key, data, 15*time.Minute).Err(); err != nil {
 			slog.Error("failed to cache manga", "key", key, "error", err)
 		}
 	}()
@@ -118,7 +114,7 @@ func (s *MangaService) ListPopularMangas(ctx context.Context) ([]byte, error) {
 	}
 
 	go func() {
-		if err := s.rdb.Set(context.Background(), key, data, 1*time.Minute).Err(); err != nil {
+		if err := s.rdb.Set(context.Background(), key, data, 15*time.Minute).Err(); err != nil {
 			slog.Error("failed to cache manga", "key", key, "error", err)
 		}
 	}()
@@ -126,6 +122,6 @@ func (s *MangaService) ListPopularMangas(ctx context.Context) ([]byte, error) {
 	return data, err
 }
 
-func (s *MangaService) FilterMangas(ctx context.Context, filter models.MangaFilter) ([]models.MangaRepo, error) {
+func (s *MangaService) FilterMangas(ctx context.Context, filter *models.MangaFilter) ([]models.MangaRepo, error) {
 	return s.repo.Manga.FilterMangas(ctx, filter)
 }

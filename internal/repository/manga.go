@@ -16,7 +16,7 @@ type MangaRepository interface {
 	ListMangas(ctx context.Context) ([]models.MangaRepo, error)
 	ListPopularMangas(ctx context.Context) ([]models.MangaRepo, error)
 	UpdateMangaPopularity(ctx context.Context, name string) error
-	FilterMangas(ctx context.Context, f models.MangaFilter) ([]models.MangaRepo, error)
+	FilterMangas(ctx context.Context, f *models.MangaFilter) ([]models.MangaRepo, error)
 }
 
 type mangaRepository struct {
@@ -65,39 +65,37 @@ func (q *mangaRepository) ListPopularMangas(ctx context.Context) ([]models.Manga
 	return pgx.CollectRows(rows, pgx.RowToStructByName[models.MangaRepo])
 }
 
-func (q *mangaRepository) FilterMangas(ctx context.Context, f models.MangaFilter) ([]models.MangaRepo, error) {
-	args := []interface{}{}
+func (q *mangaRepository) FilterMangas(ctx context.Context, f *models.MangaFilter) ([]models.MangaRepo, error) {
 	where := []string{}
-	i := 1
+	namedArgs := pgx.NamedArgs{}
 
 	query := strings.Builder{}
 	query.WriteString(`SELECT * FROM "Anime"`)
+
 	if f.Name != "" {
-		where = append(where, fmt.Sprintf(`"name" ILIKE $%d`, i))
-		args = append(args, "%"+f.Name+"%")
-		i++
+		where = append(where, `"name" ILIKE @name`)
+		namedArgs["name"] = "%" + f.Name + "%"
 	}
 	if f.Status != "" {
-		where = append(where, fmt.Sprintf(`"status" = $%d`, i))
-		args = append(args, f.Status)
-		i++
+		where = append(where, `"status" = @status`)
+		namedArgs["status"] = f.Status
 	}
 	if f.Country != "" {
-		where = append(where, fmt.Sprintf(`"country" = $%d`, i))
-		args = append(args, f.Country)
-		i++
+		where = append(where, `"country" = @country`)
+		namedArgs["country"] = f.Country
 	}
-	for _, genre := range f.Genres {
-		where = append(where, fmt.Sprintf(`"genres" @> ARRAY[$%d]`, i))
-		args = append(args, genre)
-		i++
+
+	if len(f.Genres) > 0 && f.Genres[0] != "" {
+		genresArray := "{" + strings.Join(f.Genres, ",") + "}"
+		where = append(where, `"genres" @> @genres::text[]`)
+		namedArgs["genres"] = genresArray
 	}
 
 	if len(where) > 0 {
 		query.WriteString(" WHERE ")
 		query.WriteString(strings.Join(where, " AND "))
-
 	}
+
 	if f.OrderField != "" && f.OrderSort != "" {
 		query.WriteString(fmt.Sprintf(` ORDER BY "%s" %s`, f.OrderField, f.OrderSort))
 	}
@@ -105,7 +103,7 @@ func (q *mangaRepository) FilterMangas(ctx context.Context, f models.MangaFilter
 		query.WriteString(fmt.Sprintf(` LIMIT %d OFFSET %d`, f.PerPage, (f.Page-1)*f.PerPage))
 	}
 
-	rows, err := q.db.Query(ctx, query.String(), args...)
+	rows, err := q.db.Query(ctx, query.String(), namedArgs)
 	if err != nil {
 		return nil, fmt.Errorf("repo.FilterMangas query: %w", err)
 	}

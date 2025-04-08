@@ -40,7 +40,7 @@ func (s *ChapterService) GetChapterByMangaNameAndNumber(ctx context.Context, nam
 	}
 
 	go func() {
-		if err := s.rdb.Set(context.Background(), key, data, 1*time.Minute).Err(); err != nil {
+		if err := s.rdb.Set(context.Background(), key, data, 15*time.Minute).Err(); err != nil {
 			slog.Error("failed to cache manga", "key", key, "error", err)
 		}
 	}()
