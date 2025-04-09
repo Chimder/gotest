@@ -1,0 +1,57 @@
+
+syntax = "proto3";
+
+package manga;
+
+
+import "chapter/chapter.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/chimas/GoProject/proto/manga";
+
+
+service MangaService {
+  rpc GetManga(MangaRequest) returns (MangaResponseWithChapters);
+  rpc GetAllMangas(google.protobuf.Empty) returns (MangaListResponse);
+  rpc GetPopularMangas(google.protobuf.Empty) returns (MangaListResponse);
+  rpc GetFilteredMangas(MangaFilterRequest) returns (MangaListResponse);
+};
+
+message MangaRequest {
+  string name = 1;
+}
+
+message MangaResponseWithChapters {
+  MangaResponse manga = 1;
+  repeated chapter.ChaptersResponse chapters = 2;
+}
+message MangaResponse {
+  int32 id = 1;
+  string name = 2;
+  string img = 3;
+  string img_header = 4;
+  string describe = 5;
+  repeated string genres = 6;
+  string author = 7;
+  string country = 8;
+  int32 published = 9;
+  float average_rating = 10;
+  int32 rating_count = 11;
+  string status = 12;
+  int32 popularity = 13;
+}
+
+message MangaListResponse {
+  repeated MangaResponse manga_lists = 1;
+}
+
+message MangaFilterRequest {
+  string name = 1;
+  repeated string genres = 2;
+  string status = 3;
+  string country = 4;
+  string order_field = 5;
+  string order_sort = 6;
+  int32 page = 7;
+  int32 per_page = 8;
+}

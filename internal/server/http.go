@@ -42,6 +42,8 @@ func NewServer() *Server {
 
 	rdb := db.RedisConn()
 	/////////////////////////////////////////////////////
+	go StartGRPCServer(pgdb, rdb)
+	/////////////////////////////////////////////////////
 
 	httpServer := &http.Server{
 		Addr:         ":" + PORT,

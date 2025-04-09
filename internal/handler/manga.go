@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -104,7 +105,6 @@ type FilterParams struct {
 // @Success 200 {array} models.MangaResp
 // @Router /manga/filter [get]
 func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
-	// op := "Handler Filter"
 	q := r.URL.Query()
 
 	page, _ := strconv.Atoi(q.Get("page"))
@@ -121,10 +121,9 @@ func (m *MangaHandler) Filter(w http.ResponseWriter, r *http.Request) {
 		PerPage:    perPage,
 	}
 
-
 	mangas, err := m.serv.FilterMangas(r.Context(), &filter)
 	if err != nil {
-		utils.WriteError(w, 500, "Filter Mangas")
+		utils.WriteError(w, 500, fmt.Errorf("filter mangas %w", err).Error())
 		return
 	}
 
