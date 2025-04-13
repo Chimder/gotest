@@ -6,7 +6,6 @@ import (
 	"net"
 
 	"github.com/chimas/GoProject/internal/repository"
-	"github.com/chimas/GoProject/internal/service"
 	"github.com/chimas/GoProject/proto/chapter"
 	"github.com/chimas/GoProject/proto/manga"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -24,13 +23,11 @@ func StartGRPCServer(db *pgxpool.Pool, rdb *redis.Client) {
 	}
 
 	repo := repository.NewRepository(db)
-	// mangaService := service.NewMangaService(repo, rdb)
-	chapterService := service.NewChapterService(repo, rdb)
 
 	grpcServer := grpc.NewServer()
 
 	manga.RegisterMangaServiceServer(grpcServer, NewMangaProto(repo))
-	chapter.RegisterChapterServiceServer(grpcServer, NewChapterProto(chapterService))
+	chapter.RegisterChapterServiceServer(grpcServer, NewChapterProto(repo))
 
 	reflection.Register(grpcServer)
 
@@ -150,15 +147,25 @@ func (mp *MangaProto) GetFilteredMangas(ctx context.Context, req *manga.MangaFil
 
 type ChapterProto struct {
 	chapter.UnimplementedChapterServiceServer
-	srv *service.ChapterService
+	repo *repository.Repository
 }
 
-func NewChapterProto(s *service.ChapterService) *ChapterProto {
+func NewChapterProto(r *repository.Repository) *ChapterProto {
 	return &ChapterProto{
-		srv: s,
+		repo: r,
 	}
 }
 
-func (ch *ChapterProto) GetChapters(context.Context, *chapter.ChaptersRequest) (*chapter.ChaptersResponse, error) {
-	return nil, nil
+func (ch *ChapterProto) GetChapters(ctx context.Context, req *chapter.ChaptersRequest) (*chapter.ChaptersResponse, error) {
+	c, err := ch.repo.Chapter.GetChapterByMangaNameAndNumber(ctx, req.Name, int(req.Chapter))
+	if err != nil {
+		return nil, err
+	}
+	return &chapter.ChaptersResponse{
+		Chapter:   c.Chapter,
+		Img:       c.Img,
+		Name:      c.Name,
+		MangaName: c.AnimeName,
+		CreatedAt: timestamppb.New(c.CreatedAt),
+	}, nil
 }

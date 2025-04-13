@@ -22,61 +22,17 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type UserRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        int32                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *UserRequest) Reset() {
-	*x = UserRequest{}
-	mi := &file_chapter_chapter_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UserRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UserRequest) ProtoMessage() {}
-
-func (x *UserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chapter_chapter_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UserRequest.ProtoReflect.Descriptor instead.
-func (*UserRequest) Descriptor() ([]byte, []int) {
-	return file_chapter_chapter_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *UserRequest) GetUserId() int32 {
-	if x != nil {
-		return x.UserId
-	}
-	return 0
-}
-
 type ChaptersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Chapter       string                 `protobuf:"bytes,2,opt,name=chapter,proto3" json:"chapter,omitempty"`
+	Chapter       int32                  `protobuf:"varint,2,opt,name=chapter,proto3" json:"chapter,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ChaptersRequest) Reset() {
 	*x = ChaptersRequest{}
-	mi := &file_chapter_chapter_proto_msgTypes[1]
+	mi := &file_chapter_chapter_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -88,7 +44,7 @@ func (x *ChaptersRequest) String() string {
 func (*ChaptersRequest) ProtoMessage() {}
 
 func (x *ChaptersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_chapter_chapter_proto_msgTypes[1]
+	mi := &file_chapter_chapter_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -101,7 +57,7 @@ func (x *ChaptersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChaptersRequest.ProtoReflect.Descriptor instead.
 func (*ChaptersRequest) Descriptor() ([]byte, []int) {
-	return file_chapter_chapter_proto_rawDescGZIP(), []int{1}
+	return file_chapter_chapter_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ChaptersRequest) GetName() string {
@@ -111,11 +67,11 @@ func (x *ChaptersRequest) GetName() string {
 	return ""
 }
 
-func (x *ChaptersRequest) GetChapter() string {
+func (x *ChaptersRequest) GetChapter() int32 {
 	if x != nil {
 		return x.Chapter
 	}
-	return ""
+	return 0
 }
 
 type ChaptersResponse struct {
@@ -131,7 +87,7 @@ type ChaptersResponse struct {
 
 func (x *ChaptersResponse) Reset() {
 	*x = ChaptersResponse{}
-	mi := &file_chapter_chapter_proto_msgTypes[2]
+	mi := &file_chapter_chapter_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -143,7 +99,7 @@ func (x *ChaptersResponse) String() string {
 func (*ChaptersResponse) ProtoMessage() {}
 
 func (x *ChaptersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_chapter_chapter_proto_msgTypes[2]
+	mi := &file_chapter_chapter_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -156,7 +112,7 @@ func (x *ChaptersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChaptersResponse.ProtoReflect.Descriptor instead.
 func (*ChaptersResponse) Descriptor() ([]byte, []int) {
-	return file_chapter_chapter_proto_rawDescGZIP(), []int{2}
+	return file_chapter_chapter_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ChaptersResponse) GetChapter() int32 {
@@ -198,12 +154,10 @@ var File_chapter_chapter_proto protoreflect.FileDescriptor
 
 const file_chapter_chapter_proto_rawDesc = "" +
 	"\n" +
-	"\x15chapter/chapter.proto\x12\achapter\x1a\x1fgoogle/protobuf/timestamp.proto\"&\n" +
-	"\vUserRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x05R\x06userId\"?\n" +
+	"\x15chapter/chapter.proto\x12\achapter\x1a\x1fgoogle/protobuf/timestamp.proto\"?\n" +
 	"\x0fChaptersRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
-	"\achapter\x18\x02 \x01(\tR\achapter\"\xac\x01\n" +
+	"\achapter\x18\x02 \x01(\x05R\achapter\"\xac\x01\n" +
 	"\x10ChaptersResponse\x12\x18\n" +
 	"\achapter\x18\x01 \x01(\x05R\achapter\x12\x10\n" +
 	"\x03img\x18\x02 \x03(\tR\x03img\x12\x12\n" +
@@ -227,17 +181,16 @@ func file_chapter_chapter_proto_rawDescGZIP() []byte {
 	return file_chapter_chapter_proto_rawDescData
 }
 
-var file_chapter_chapter_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_chapter_chapter_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_chapter_chapter_proto_goTypes = []any{
-	(*UserRequest)(nil),           // 0: chapter.UserRequest
-	(*ChaptersRequest)(nil),       // 1: chapter.ChaptersRequest
-	(*ChaptersResponse)(nil),      // 2: chapter.ChaptersResponse
-	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
+	(*ChaptersRequest)(nil),       // 0: chapter.ChaptersRequest
+	(*ChaptersResponse)(nil),      // 1: chapter.ChaptersResponse
+	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
 }
 var file_chapter_chapter_proto_depIdxs = []int32{
-	3, // 0: chapter.ChaptersResponse.created_at:type_name -> google.protobuf.Timestamp
-	1, // 1: chapter.ChapterService.GetChapters:input_type -> chapter.ChaptersRequest
-	2, // 2: chapter.ChapterService.GetChapters:output_type -> chapter.ChaptersResponse
+	2, // 0: chapter.ChaptersResponse.created_at:type_name -> google.protobuf.Timestamp
+	0, // 1: chapter.ChapterService.GetChapters:input_type -> chapter.ChaptersRequest
+	1, // 2: chapter.ChapterService.GetChapters:output_type -> chapter.ChaptersResponse
 	2, // [2:3] is the sub-list for method output_type
 	1, // [1:2] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -256,7 +209,7 @@ func file_chapter_chapter_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_chapter_chapter_proto_rawDesc), len(file_chapter_chapter_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

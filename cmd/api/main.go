@@ -11,7 +11,7 @@ import (
 	"time"
 
 	_ "github.com/chimas/GoProject/docs"
-	"github.com/chimas/GoProject/internal/server"
+	server "github.com/chimas/GoProject/internal/application"
 	_ "github.com/lib/pq"
 )
 

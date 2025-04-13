@@ -25,7 +25,7 @@ type MangaWithChaptersResp struct {
 
 func MangaWithChaptersRespFromDB(m MangaRepo, c []ChapterRepo) MangaWithChaptersResp {
 	return MangaWithChaptersResp{
-		Manga: MangaRespFromDB(m),
+		Manga:    MangaRespFromDB(m),
 		Chapters: ChaptersRespFromDB(c),
 	}
 }

@@ -26,7 +26,7 @@ func WriteError(w http.ResponseWriter, status int, err string) {
 	w.WriteHeader(status)
 	slog.Error("HTTP", "err:", err)
 	if err := json.NewEncoder(w).Encode(map[string]string{"err": err}); err != nil {
-		http.Error(w, `{"err": err encode error}`, status)
+		http.Error(w, `{"err": encode error}`, status)
 	}
 }
 

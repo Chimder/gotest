@@ -7,17 +7,13 @@ import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/chimas/GoProject/proto/chapter";
 
-message UserRequest{
-  int32 user_id = 1;
-}
-
 service ChapterService {
   rpc GetChapters (ChaptersRequest) returns (ChaptersResponse);
 }
 
 message ChaptersRequest {
   string name = 1;
-  string chapter = 2;
+  int32 chapter = 2;
 }
 
 message ChaptersResponse{
