@@ -16,13 +16,13 @@ import (
 )
 
 //		@title			Manka Api
-//		@version		1.0
+//		@version		1.1
 //		@description	Manga search
-//	 @BasePath	/
+//	  @BasePath	/
 func main() {
 	srv := server.NewServer()
 
-	sigCh := make(chan os.Signal, 1)
+	sigCh := make(chan os.Signal, 3)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
@@ -30,7 +30,7 @@ func main() {
 			fmt.Printf("Error listen server: %v\n", err)
 		}
 	}()
-	slog.Info("Server is listening","port", srv.Addr())
+	slog.Info("Server is listening", "port", srv.Addr())
 
 	<-sigCh
 	fmt.Println("Shutting down the server...")
@@ -39,9 +39,9 @@ func main() {
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		fmt.Printf("Error: %v\n", err)
+		slog.Error("Err shutdown", "err %w\n", err)
 	}
-	srv.Close(ctx)
+	srv.Close()
 	slog.Info("Server gracefully stopped")
 	os.Exit(0)
 }

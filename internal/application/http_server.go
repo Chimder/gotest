@@ -59,7 +59,7 @@ func NewServer() *Server {
 	}
 }
 
-func (s *Server) Close(ctx context.Context) {
+func (s *Server) Close() {
 	if s.db != nil {
 		s.db.Close()
 	}
