@@ -38,7 +38,7 @@ func RedisConn() *redis.Client {
 		PoolTimeout:  30 * time.Second,
 	}
 
-	if cfg.IS_PROD {
+	if parsedURL.Scheme == "rediss" {
 		opts.TLSConfig = &tls.Config{
 			MinVersion: tls.VersionTLS12,
 		}

@@ -9,6 +9,7 @@ import (
 	_ "github.com/chimas/GoProject/docs"
 	"github.com/chimas/GoProject/internal/config"
 	"github.com/chimas/GoProject/internal/db"
+	"github.com/chimas/GoProject/internal/interfaces/chi"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	_ "github.com/lib/pq"
@@ -46,7 +47,7 @@ func NewServer() *Server {
 
 	httpServer := &http.Server{
 		Addr:         ":" + PORT,
-		Handler:      NewRouter(pgdb, rdb),
+		Handler:      chi.NewRouter(pgdb, rdb),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  time.Minute,

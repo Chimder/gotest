@@ -20,17 +20,20 @@ import (
 //		@description	Manga search
 //	  @BasePath	/
 func main() {
+	// srv := server.New()
 	srv := server.NewServer()
 
-	sigCh := make(chan os.Signal, 3)
+	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
+		// if err := srv.Run(); err != nil && err != http.ErrServerClosed {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			fmt.Printf("Error listen server: %v\n", err)
 		}
 	}()
-	slog.Info("Server is listening", "port", srv.Addr())
+	// slog.Info("Server is listening", "port", srv.Addr())
+	slog.Info("Server is listening")
 
 	<-sigCh
 	fmt.Println("Shutting down the server...")
@@ -41,7 +44,6 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		slog.Error("Err shutdown", "err %w\n", err)
 	}
-	srv.Close()
 	slog.Info("Server gracefully stopped")
 	os.Exit(0)
 }

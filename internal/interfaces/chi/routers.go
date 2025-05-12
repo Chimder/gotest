@@ -1,10 +1,10 @@
-package server
+package chi
 
 import (
 	"net/http"
 
 	"github.com/chimas/GoProject/internal/auth"
-	"github.com/chimas/GoProject/internal/handler"
+	"github.com/chimas/GoProject/internal/interfaces/chi/handler"
 	"github.com/chimas/GoProject/internal/repository"
 	"github.com/chimas/GoProject/internal/service"
 	"github.com/go-chi/chi"
